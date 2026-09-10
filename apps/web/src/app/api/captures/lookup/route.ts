@@ -10,16 +10,17 @@ export function OPTIONS() {
 
 /**
  * text -> { id, user_note } for the whole vault. Used later by the extension's
- * re-encounter detection to underline saved words while browsing.
+ * re-encounter detection to underline saved words while browsing. Term
+ * captures only — screenshots/links/notes don't have a single word to match.
  */
 export async function GET(req: Request) {
   const ctx = await requireUser(req);
   if (isResponse(ctx)) return ctx;
 
   const { data, error } = await ctx.supabase
-    .from("words")
+    .from("captures")
     .select("id, text, user_note")
-    .eq("entry_type", "term");
+    .eq("capture_type", "term");
 
   if (error) return badRequest(error.message);
 

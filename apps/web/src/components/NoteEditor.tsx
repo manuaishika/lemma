@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Word } from "@lemma/shared";
+import type { Capture } from "@lemma/shared";
 
-export function NoteEditor({ word }: { word: Word }) {
+export function NoteEditor({ capture }: { capture: Capture }) {
   const router = useRouter();
-  const [note, setNote] = useState(word.user_note ?? "");
+  const [note, setNote] = useState(capture.user_note ?? "");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   async function save() {
     setStatus("saving");
-    const res = await fetch(`/api/words/${word.id}`, {
+    const res = await fetch(`/api/captures/${capture.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ user_note: note }),
@@ -38,7 +38,7 @@ export function NoteEditor({ word }: { word: Word }) {
       <div className="mt-2 flex items-center gap-3">
         <button
           onClick={save}
-          disabled={status === "saving" || note === (word.user_note ?? "")}
+          disabled={status === "saving" || note === (capture.user_note ?? "")}
           className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft disabled:opacity-50"
         >
           {status === "saving" ? "Saving…" : "Save note"}

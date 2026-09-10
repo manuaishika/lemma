@@ -1,8 +1,8 @@
 import type {
-  CreateWordInput,
+  Capture,
+  CreateCaptureInput,
   ExplainInput,
   ExplainResult,
-  Word,
 } from "@lemma/shared";
 import { API_BASE } from "./config.js";
 import { clearSession, getAccessToken } from "./auth.js";
@@ -41,8 +41,8 @@ export function explainWord(input: ExplainInput): Promise<ExplainResult> {
   });
 }
 
-export function createWord(input: CreateWordInput): Promise<{ word: Word }> {
-  return request<{ word: Word }>("/api/words", {
+export function createCapture(input: CreateCaptureInput): Promise<{ capture: Capture }> {
+  return request<{ capture: Capture }>("/api/captures", {
     method: "POST",
     body: JSON.stringify(input),
   });

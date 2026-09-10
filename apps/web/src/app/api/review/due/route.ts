@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await ctx.supabase
     .from("srs_cards")
-    .select("*, word:words(*)")
+    .select("*, capture:captures(*)")
     .lte("due_at", new Date().toISOString())
     .order("due_at", { ascending: true })
     .limit(limit);
@@ -24,10 +24,10 @@ export async function GET(req: Request) {
   if (error) return badRequest(error.message);
 
   const due: DueCard[] = (data ?? [])
-    .filter((row) => row.word)
+    .filter((row) => row.capture)
     .map((row) => {
-      const { word, ...card } = row as typeof row & { word: DueCard["word"] };
-      return { card, word };
+      const { capture, ...card } = row as typeof row & { capture: DueCard["capture"] };
+      return { card, capture };
     });
 
   return NextResponse.json({ due }, { headers: CORS_HEADERS });

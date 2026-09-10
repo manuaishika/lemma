@@ -56,10 +56,13 @@ features (clustering, digest email) — leave them blank for now.
 
 ## 3. Database schema
 
-The schema is three SQL files in `supabase/migrations/`, applied in order:
+The schema is six SQL files in `supabase/migrations/`, applied in order:
 `0001_schema.sql` (7 tables), `0002_triggers.sql` (profile-on-signup,
-SRS-card-on-word-insert, `apply_review` RPC), `0003_rls.sql` (row-level
-security).
+SRS-card-on-capture-insert, `apply_review` RPC), `0003_rls.sql` (row-level
+security), `0004_captures.sql` (generalizes `words` into `captures` —
+term/note/screenshot/link — and adds `spaces`/`space_members`),
+`0005_captures_rls.sql` (owner-or-space-member visibility), `0006_storage.sql`
+(private `captures` storage bucket for screenshots).
 
 **Option A — Supabase CLI:**
 
@@ -73,9 +76,12 @@ pnpm db:push
 `supabase/migrations/` and run them in the dashboard's SQL editor, in numeric
 order.
 
-Verify in **Table editor**: `profiles`, `words`, `srs_cards`, `review_logs`,
-`word_embeddings`, `clusters`, `word_clusters`. Under **Database → Functions**
-you should see `apply_review`, `handle_new_user`, `handle_new_word`.
+Verify in **Table editor**: `profiles`, `captures`, `srs_cards`, `review_logs`,
+`word_embeddings`, `clusters`, `word_clusters`, `spaces`, `space_members`.
+Under **Database → Functions** you should see `apply_review`,
+`handle_new_user`, `handle_new_capture`, `handle_new_space`,
+`lookup_user_by_email`, `is_space_member`. Under **Storage** you should see a
+private `captures` bucket.
 
 The `vector` extension is created by `0001_schema.sql`; if the dashboard warns,
 enable **Database → Extensions → vector** manually.
@@ -112,13 +118,19 @@ Then in Chrome:
 ## 6. Try the loop
 
 1. On any article, select a single word → right-click → **Save "…" to Lemma**
-   (or press Ctrl+Shift+S).
-2. The popup shows the word, a Claude explanation of how it's used in that
-   sentence (muted), and a dictionary fallback (collapsed). Type your own
-   understanding in the bordered field. **Save**.
-3. Back in the web app, reload `/app` — the word is there, your note prominent.
-4. Go to `/app/review`. The new card is due immediately. Reveal your note,
-   grade it. In the Supabase dashboard, `srs_cards` for that word now shows a
+   (or press Ctrl+Shift+S). Try the other two capture modes too: right-click
+   anywhere with nothing selected → **Save screenshot to Lemma**, or
+   right-click a link → **Save this link to Lemma**.
+2. For a word/phrase, the popup shows a Claude explanation of how it's used in
+   that sentence (muted) and a dictionary fallback (collapsed); screenshots and
+   links skip straight to the note field. Type your own understanding. **Save**.
+3. Back in the web app, reload `/app` — the capture is there, your note
+   prominent. Try `/app/spaces/new` to create a shared space, invite a second
+   account by email from its settings page, and save a capture into it via the
+   space switcher in the header.
+4. Go to `/app/review`. The new card is due immediately (every capture type is
+   reviewable). Reveal your note, grade it. In the Supabase dashboard,
+   `srs_cards` for that capture now shows a
    bumped `interval_days` / `due_at` / `ease_factor`, and there's a new
    `review_logs` row.
 

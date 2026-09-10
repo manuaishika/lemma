@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GRADE_LABELS, GRADES, previewIntervals, type DueCard, type Grade } from "@lemma/shared";
+import { CaptureImage } from "./CaptureImage";
 
 function humanInterval(days: number): string {
   if (days <= 1) return "1d";
@@ -63,7 +64,7 @@ export function ReviewSession({ initial }: { initial: DueCard[] }) {
     if (index + 1 >= queue.length) router.refresh();
   }
 
-  const w = current.word;
+  const c = current.capture;
 
   return (
     <div className="mt-8">
@@ -72,10 +73,20 @@ export function ReviewSession({ initial }: { initial: DueCard[] }) {
       </p>
 
       <div className="mt-6 text-center">
-        <h1 className="font-serif text-4xl text-ink">{w.text}</h1>
-        {w.sentence && (
+        <h1 className="font-serif text-4xl text-ink">
+          {c.capture_type === "screenshot" ? c.text || "Screenshot" : c.text}
+        </h1>
+        {c.capture_type === "screenshot" && (
+          <div className="mx-auto mt-4 max-w-md text-left">
+            <CaptureImage id={c.id} alt={c.text || "Screenshot"} />
+          </div>
+        )}
+        {c.capture_type === "link" && c.link_url && (
+          <p className="mx-auto mt-2 max-w-md truncate text-sm text-ink-faint">{c.link_url}</p>
+        )}
+        {c.sentence && (
           <p className="mx-auto mt-4 max-w-md text-sm text-ink-faint">
-            &ldquo;…{w.sentence.replace(w.text, " ")}…&rdquo;
+            &ldquo;…{c.sentence.replace(c.text, " ")}…&rdquo;
           </p>
         )}
       </div>
@@ -89,14 +100,14 @@ export function ReviewSession({ initial }: { initial: DueCard[] }) {
         </button>
       ) : (
         <div className="mx-auto mt-8 max-w-md">
-          {w.user_note ? (
+          {c.user_note ? (
             <p className="note-artifact whitespace-pre-wrap text-[15px] leading-relaxed">
-              {w.user_note}
+              {c.user_note}
             </p>
           ) : (
-            <p className="text-sm italic text-ink-faint">No note was written for this word.</p>
+            <p className="text-sm italic text-ink-faint">No note was written for this capture.</p>
           )}
-          {w.explanation && <p className="explanation-scaffold mt-4">{w.explanation}</p>}
+          {c.explanation && <p className="explanation-scaffold mt-4">{c.explanation}</p>}
 
           <div className="mt-8 grid grid-cols-4 gap-2">
             {GRADES.map((g) => (

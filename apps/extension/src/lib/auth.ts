@@ -27,6 +27,18 @@ function expired(session: StoredSession): boolean {
   return Date.now() / 1000 > session.expires_at - 60;
 }
 
+/** Decode the `sub` claim (the user id) out of a Supabase access-token JWT, no verification needed client-side. */
+export function decodeUserId(accessToken: string): string | null {
+  try {
+    const payload = accessToken.split(".")[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return (JSON.parse(json).sub as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** A valid access token, refreshing against Supabase if the current one is stale. */
 export async function getAccessToken(): Promise<string | null> {
   const session = await getSession();

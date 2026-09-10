@@ -1,10 +1,14 @@
 # Lemma
 
-A personal semantic memory system for the words you meet while reading.
+A personal semantic memory system for anything you meet while reading —
+a word, an idea, a screenshot of a formula, a link worth returning to.
 
-Capture a word in context → get a short explanation of how it's used *here* →
-write what it means to you. **That note is the artifact.** Spaced review (SM-2)
-brings it back before you forget it.
+Capture it in context → for text, get a short explanation of how it's used
+*here* → write what it means to you. **That note is the artifact.** Spaced
+review (SM-2) brings it back before you forget it — every capture type is
+reviewable, not just vocabulary. Optionally drop a capture into a shared
+**space**: an async shared folder (not live co-editing) where invited people
+see what gets added on refresh.
 
 > Formerly the "Word Vault" browser extension. Same idea, now a full stack:
 > a Chrome extension for capture, a web app for the vault + review, and a
@@ -41,17 +45,26 @@ LEMMA_API_BASE=http://localhost:3000 pnpm --filter @lemma/extension build
 
 ## What works today (core loop)
 
-- Right-click capture of a word + its sentence + page title + URL
-- Context-aware explanation (Claude) with a dictionary fallback, shown recessively
-- Save to Supabase; the vault lists everything, newest first
-- Word detail page with an inline note editor
-- SM-2 review: Again / Hard / Good / Easy, ease + interval compounding, logged
+- Capture three kinds of things, from the extension's right-click menu:
+  a **word/phrase selection** (+ its sentence, page title, URL), a
+  **screenshot** (visible tab), or a **link**
+  - Text captures get a context-aware explanation (Claude) with a dictionary
+    fallback, shown recessively — screenshots/links skip that and go straight
+    to your note
+- Save to Supabase; the vault lists everything, newest first, per capture type
+- Capture detail page with an inline note editor
+- SM-2 review across every capture type: Again / Hard / Good / Easy, ease +
+  interval compounding, logged
+- **Spaces**: create an async shared folder, invite an existing Lemma user by
+  email, both add captures, everyone sees them on refresh. A collaborator can
+  add to a space but not edit/delete someone else's capture in it (yet).
 
 ## Not built yet (schema is ready for it)
 
 Re-encounter detection (underline saved words as you browse), semantic
 clustering (embeddings + k-means + Claude-named clusters), daily digest email,
-offline capture queue, Chrome Web Store packaging.
+offline capture queue, Chrome Web Store packaging, editable permissions for
+space collaborators, invite-by-email-for-people-without-an-account.
 
 ## Scripts
 

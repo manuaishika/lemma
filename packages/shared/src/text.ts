@@ -5,16 +5,20 @@ export function normalizeSelection(text: string): string {
   return (text || "").replace(/\s+/g, " ").trim();
 }
 
-/** 1 token -> "term", more than 1 -> "note". Deterministic on purpose. */
-export function classifyEntryType(text: string): "term" | "note" {
+/**
+ * Classifies a text selection only — screenshot/link captures are chosen
+ * explicitly by how they're captured, not inferred from length.
+ * 1 token -> "term", more than 1 -> "note". Deterministic on purpose.
+ */
+export function classifyCaptureType(text: string): "term" | "note" {
   const normalized = normalizeSelection(text);
   if (!normalized) return "term";
   return normalized.split(/\s+/).filter(Boolean).length === 1 ? "term" : "note";
 }
 
-export function buildDisplayTitle(text: string, entryType: "term" | "note"): string {
+export function buildDisplayTitle(text: string, captureType: "term" | "note"): string {
   const normalized = normalizeSelection(text);
-  if (entryType !== "note") return normalized;
+  if (captureType !== "note") return normalized;
   return normalized.length > 78 ? `${normalized.slice(0, 78).trim()}…` : normalized;
 }
 

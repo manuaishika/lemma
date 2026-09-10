@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Space } from "@lemma/shared";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/SignOutButton";
+import { SpaceSwitcher } from "@/components/SpaceSwitcher";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -9,6 +12,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const { data: spaces } = await supabase.from("spaces").select("*").order("name");
 
   return (
     <div className="min-h-screen">
@@ -24,6 +29,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/review" className="text-ink-soft hover:text-ink">
               Review
             </Link>
+            <Suspense fallback={null}>
+              <SpaceSwitcher spaces={(spaces as Space[]) ?? []} />
+            </Suspense>
           </nav>
           <SignOutButton />
         </div>

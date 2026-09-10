@@ -1,5 +1,5 @@
 import { enclosingSentence, normalizeSelection } from "@lemma/shared";
-import type { Capture } from "./types.js";
+import type { SelectionCapture } from "./types.js";
 
 let lastSelectionText = "";
 let lastSelectionSentence = "";
@@ -28,7 +28,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const sentence =
       live && sel ? enclosingSentence(blockTextForSelection(sel), live) : lastSelectionSentence;
 
-    const capture: Capture = {
+    const capture: SelectionCapture = {
+      kind: "selection",
       text,
       sentence,
       pageTitle: document.title,

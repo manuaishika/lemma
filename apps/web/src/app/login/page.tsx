@@ -16,6 +16,16 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
+  async function signInWithGoogle() {
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}${next}` },
+    });
+    if (error) setError(error.message);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -69,7 +79,21 @@ function LoginForm() {
         {mode === "signin" ? "Sign in" : "Create your vault"}
       </h1>
 
-      <form onSubmit={submit} className="mt-8 space-y-4">
+      <button
+        onClick={signInWithGoogle}
+        type="button"
+        className="mt-8 flex w-full items-center justify-center gap-2 rounded-md border border-line bg-paper-raised px-4 py-2 text-sm font-medium text-ink transition hover:border-accent"
+      >
+        Continue with Google
+      </button>
+
+      <div className="mt-6 flex items-center gap-3 text-xs text-ink-faint">
+        <span className="h-px flex-1 bg-line" />
+        or
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <form onSubmit={submit} className="mt-6 space-y-4">
         <input
           type="email"
           required

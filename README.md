@@ -58,13 +58,16 @@ LEMMA_API_BASE=http://localhost:3000 pnpm --filter @lemma/extension build
 - **Spaces**: create an async shared folder, invite an existing Lemma user by
   email, both add captures, everyone sees them on refresh. A collaborator can
   add to a space but not edit/delete someone else's capture in it (yet).
+- **Reminder email**: every capture gets a `remind_at` 3 days out; `GET
+  /api/remind` (Vercel Cron, daily) emails "still want to look into this?" via
+  Resend and marks it sent. See [`docs/SETUP.md`](docs/SETUP.md#7-reminder-emails).
 
 ## Not built yet (schema is ready for it)
 
 Re-encounter detection (underline saved words as you browse), semantic
-clustering (embeddings + k-means + Claude-named clusters), daily digest email,
-offline capture queue, Chrome Web Store packaging, editable permissions for
-space collaborators, invite-by-email-for-people-without-an-account.
+clustering (embeddings + k-means + Claude-named clusters), offline capture
+queue, Chrome Web Store packaging, editable permissions for space
+collaborators, invite-by-email-for-people-without-an-account.
 
 ## Scripts
 

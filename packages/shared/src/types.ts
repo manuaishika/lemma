@@ -39,6 +39,9 @@ export interface Capture {
   user_note: string | null;
   /** null = personal vault; set = lives in a shared space. */
   space_id: string | null;
+  /** When the "still want to look into this?" reminder email goes out. */
+  remind_at: string;
+  reminder_sent: boolean;
   created_at: string;
   updated_at: string;
 }

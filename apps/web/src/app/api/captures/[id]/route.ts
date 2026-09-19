@@ -47,10 +47,17 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id } = await params;
 
   // .select() so we can tell "deleted" from "RLS matched nothing" (not the author).
-  const { data, error } = await ctx.supabase.from("captures").delete().eq("id", id).select("id");
+  const { data, error } = await ctx.supabase.from("captures").delete().eq("id", id).select("id, image_path");
   if (error) return badRequest(error.message);
   if (!data || data.length === 0) {
     return NextResponse.json({ error: "not found" }, { status: 404, headers: CORS_HEADERS });
   }
+
+  const imagePath = data[0]?.image_path;
+  if (imagePath) {
+    // Best-effort: the row is already gone either way, this just frees storage.
+    await ctx.supabase.storage.from("captures").remove([imagePath]);
+  }
+
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }

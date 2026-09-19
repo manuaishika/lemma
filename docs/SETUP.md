@@ -56,13 +56,14 @@ features (clustering, digest email) — leave them blank for now.
 
 ## 3. Database schema
 
-The schema is six SQL files in `supabase/migrations/`, applied in order:
+The schema is seven SQL files in `supabase/migrations/`, applied in order:
 `0001_schema.sql` (7 tables), `0002_triggers.sql` (profile-on-signup,
 SRS-card-on-capture-insert, `apply_review` RPC), `0003_rls.sql` (row-level
 security), `0004_captures.sql` (generalizes `words` into `captures` —
 term/note/screenshot/link — and adds `spaces`/`space_members`),
 `0005_captures_rls.sql` (owner-or-space-member visibility), `0006_storage.sql`
-(private `captures` storage bucket for screenshots).
+(private `captures` storage bucket for screenshots), `0007_reminders.sql`
+(`captures.remind_at` / `reminder_sent`, for the 3-day reminder email).
 
 **Option A — Supabase CLI:**
 
@@ -133,6 +134,23 @@ Then in Chrome:
    `srs_cards` for that capture now shows a
    bumped `interval_days` / `due_at` / `ease_factor`, and there's a new
    `review_logs` row.
+
+## 7. Reminder emails
+
+Every capture gets a `remind_at` 3 days out at save time. `GET /api/remind`
+sweeps for due, unsent reminders and emails "still want to look into this?"
+via Resend, then marks them sent.
+
+- Needs `RESEND_API_KEY` (resend.com → API Keys) and a `CRON_SECRET` — the
+  route 401s without a request header `Authorization: Bearer $CRON_SECRET`
+  matching it. Without `RESEND_API_KEY` the route runs but sends nothing
+  (same degrade-gracefully pattern as `/api/explain`).
+- On Vercel: `apps/web/vercel.json` schedules it daily at 14:00 UTC. Setting
+  `CRON_SECRET` as a project env var makes Vercel Cron sign its own requests
+  with it automatically — no extra wiring needed.
+- Test it locally: `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/remind`
+  — to see it fire without waiting 3 days, backdate a row:
+  `update captures set remind_at = now() - interval '1 minute' where id = '...';`
 
 ## Troubleshooting
 

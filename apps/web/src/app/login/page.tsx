@@ -9,11 +9,15 @@ function LoginForm() {
   const params = useSearchParams();
   const next = params.get("next") || "/app";
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(
+    params.get("mode") === "signup" ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(params.get("error"));
   const [busy, setBusy] = useState(false);
+  // Off until the Google provider is enabled in Supabase (Auth → Providers).
+  const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
   const [checkEmail, setCheckEmail] = useState(false);
 
   async function signInWithGoogle() {
@@ -21,7 +25,9 @@ function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${next}` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (error) setError(error.message);
   }
@@ -79,21 +85,25 @@ function LoginForm() {
         {mode === "signin" ? "Sign in" : "Create your vault"}
       </h1>
 
-      <button
-        onClick={signInWithGoogle}
-        type="button"
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-md border border-line bg-paper-raised px-4 py-2 text-sm font-medium text-ink transition hover:border-accent"
-      >
-        Continue with Google
-      </button>
+      {googleEnabled && (
+        <>
+          <button
+            onClick={signInWithGoogle}
+            type="button"
+            className="mt-8 flex w-full items-center justify-center gap-2 rounded-md border border-line bg-paper-raised px-4 py-2 text-sm font-medium text-ink transition hover:border-accent"
+          >
+            Continue with Google
+          </button>
 
-      <div className="mt-6 flex items-center gap-3 text-xs text-ink-faint">
-        <span className="h-px flex-1 bg-line" />
-        or
-        <span className="h-px flex-1 bg-line" />
-      </div>
+          <div className="mt-6 flex items-center gap-3 text-xs text-ink-faint">
+            <span className="h-px flex-1 bg-line" />
+            or
+            <span className="h-px flex-1 bg-line" />
+          </div>
+        </>
+      )}
 
-      <form onSubmit={submit} className="mt-6 space-y-4">
+      <form onSubmit={submit} className={googleEnabled ? "mt-6 space-y-4" : "mt-8 space-y-4"}>
         <input
           type="email"
           required

@@ -28,18 +28,18 @@ export default async function Home() {
       <p className="font-serif text-sm italic text-ink-faint">Lemma</p>
 
       <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">
-        A save button for anything you don't want to lose while reading.
+        Write down why it mattered. Lemma brings it back until it sticks.
       </h1>
       <p className="mt-6 max-w-lg text-lg text-ink-soft">
-        A word you don't know, a screenshot of a formula, a link you'll want later — one
-        right-click saves it, with a place to write <em>why it mattered to you</em>. That note is
-        what you keep. Everything comes back on a spaced-review schedule so you actually remember
-        it instead of losing it in fifty browser tabs.
+        Right-click a word, a formula, a link — anything you don't want to lose while reading —
+        and write one sentence on <em>why it mattered to you</em>. That sentence is what you keep.
+        It returns on a spaced-review schedule, so you remember it instead of losing it in fifty
+        browser tabs.
       </p>
 
       <div className="mt-8 flex items-center gap-4">
         <Link
-          href="/login"
+          href="/login?mode=signup"
           className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft"
         >
           Create an account
@@ -68,8 +68,8 @@ export default async function Home() {
         />
         <Step
           n="4"
-          title="Share a folder, optionally"
-          body="Create a space and invite someone by email — a shared folder you both add to. Not live editing, just a place things show up for both of you."
+          title="Share a space"
+          body="Create a space and invite someone by email. You both add to it, and everything either of you saves shows up for both."
         />
       </section>
 

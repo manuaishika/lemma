@@ -25,6 +25,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (key in body) patch[key] = body[key];
   }
   if (Object.keys(patch).length === 0) return badRequest("no updatable fields");
+  if ("user_note" in patch && !String(patch.user_note ?? "").trim()) {
+    return badRequest("The note can't be empty — it's the point of the capture.");
+  }
 
   const { data, error } = await ctx.supabase
     .from("captures")

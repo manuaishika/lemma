@@ -1,8 +1,8 @@
 // SM-2 spaced repetition. Pure functions, no I/O.
-// Reference: https://super-memory.com/english/ol/sm2.htm
-//
-// Lemma grades map onto SM-2 quality scores:
-//   0 Again -> q2   1 Hard -> q3   2 Good -> q4   3 Easy -> q5
+// Constants are fixed by the product brief -- do not tune them:
+//   ease delta per grade:  Again -0.20  Hard -0.15  Good 0  Easy +0.15
+//   Again is the only lapse (reps -> 0, back in 1 day); Hard/Good/Easy all advance.
+//   The next interval uses the ease *before* this review's delta is applied.
 
 import type { Grade } from "./types.js";
 
@@ -19,15 +19,9 @@ export interface ReviewOutcome extends CardState {
   dueAt: Date;
 }
 
-const QUALITY_BY_GRADE: Record<Grade, number> = { 0: 2, 1: 3, 2: 4, 3: 5 };
+const EASE_DELTA: Record<Grade, number> = { 0: -0.2, 1: -0.15, 2: 0, 3: 0.15 };
 
 const DAY_MS = 86_400_000;
-
-/** SM-2 ease update. Always applied, then clamped to MIN_EASE. */
-function nextEase(ease: number, quality: number): number {
-  const delta = 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02);
-  return Math.max(MIN_EASE, round2(ease + delta));
-}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -41,26 +35,20 @@ function round2(n: number): number {
  * @param now   review timestamp (defaults to current time); dueAt is derived from it
  */
 export function review(card: CardState, grade: Grade, now: Date = new Date()): ReviewOutcome {
-  const quality = QUALITY_BY_GRADE[grade];
-  const easeFactor = nextEase(card.easeFactor, quality);
+  let { repetitions, intervalDays } = card;
 
-  let repetitions: number;
-  let intervalDays: number;
-
-  if (quality < 3) {
+  if (grade === 0) {
     // Lapse: reset the streak, see it again tomorrow.
     repetitions = 0;
     intervalDays = 1;
   } else {
-    repetitions = card.repetitions + 1;
-    if (repetitions === 1) {
-      intervalDays = 1;
-    } else if (repetitions === 2) {
-      intervalDays = 6;
-    } else {
-      intervalDays = Math.max(1, Math.round(card.intervalDays * easeFactor));
-    }
+    if (repetitions === 0) intervalDays = 1;
+    else if (repetitions === 1) intervalDays = 6;
+    else intervalDays = Math.round(intervalDays * card.easeFactor);
+    repetitions += 1;
   }
+
+  const easeFactor = Math.max(MIN_EASE, round2(card.easeFactor + EASE_DELTA[grade]));
 
   return {
     easeFactor,

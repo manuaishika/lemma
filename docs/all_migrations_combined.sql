@@ -1,3 +1,4 @@
+-- ===== 0001_schema.sql =====
 -- Lemma core schema: 7 tables.
 -- Philosophy note: `words.explanation` is disposable scaffolding;
 -- `words.user_note` is the artifact.
@@ -99,6 +100,9 @@ $$;
 create trigger words_touch_updated_at
   before update on public.words
   for each row execute function public.touch_updated_at();
+
+
+-- ===== 0002_triggers.sql =====
 -- Structural guarantees:
 --   * every auth user gets a profiles row
 --   * every word gets exactly one srs_cards row, created in the same txn as the word
@@ -182,6 +186,9 @@ begin
   return v_card;
 end;
 $$;
+
+
+-- ===== 0003_rls.sql =====
 -- Row-level security: a user can only ever touch their own rows.
 
 alter table public.profiles       enable row level security;
@@ -227,6 +234,9 @@ create policy "word_clusters: self insert" on public.word_clusters for insert
   with check (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()));
 create policy "word_clusters: self delete" on public.word_clusters for delete
   using (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()));
+
+
+-- ===== 0004_captures.sql =====
 -- Generalize the vocabulary vault into a general capture model:
 -- term | note | screenshot | link, optionally living in a shared space.
 
@@ -375,6 +385,9 @@ $$;
 
 revoke all on function public.lookup_user_by_email(text) from public;
 grant execute on function public.lookup_user_by_email(text) to authenticated;
+
+
+-- ===== 0005_captures_rls.sql =====
 -- Replace the old owner-only policies on captures (still named words_* --
 -- table renames don't rename policies) with owner-OR-space-member rules,
 -- and add RLS for the two new tables.
@@ -465,6 +478,9 @@ create policy profiles_visible_to_space_cohabitants on public.profiles for selec
     select 1 from public.space_members a
     where a.user_id = profiles.id and public.is_space_member(a.space_id)
   ));
+
+
+-- ===== 0006_storage.sql =====
 -- Private bucket for screenshot captures. Objects live at
 -- "{auth.uid()}/{capture id}.png" -- direct storage access is owner-only;
 -- a space member views another member's screenshot through the
@@ -491,3 +507,69 @@ create policy captures_bucket_owner_delete on storage.objects for delete
     bucket_id = 'captures'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+
+-- ===== 0007_reminders.sql =====
+-- "Hey, you saved this -- still want to look into it?" reminder emails,
+-- sent once per capture, 3 days after it was saved.
+
+alter table public.captures add column remind_at timestamptz not null default (now() + interval '3 days');
+alter table public.captures add column reminder_sent boolean not null default false;
+
+-- the cron sweep scans exactly this: unset reminders whose time has come.
+create index captures_remind_idx on public.captures (remind_at) where reminder_sent = false;
+
+
+-- ===== 0008_space_invites.sql =====
+-- Pending invites: invite someone by email before they have a Lemma account.
+-- When an account with that email is created, handle_new_user() turns every
+-- matching invite into a space_members row and deletes the invite.
+
+create table public.space_invites (
+  id         uuid primary key default gen_random_uuid(),
+  space_id   uuid not null references public.spaces (id) on delete cascade,
+  email      text not null check (email = lower(email)),
+  invited_by uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (space_id, email)
+);
+
+alter table public.space_invites enable row level security;
+
+-- Only the space owner can see, create, or revoke invites.
+create policy space_invites_select_by_owner on public.space_invites for select
+  using (exists (select 1 from public.spaces s where s.id = space_id and s.owner_id = auth.uid()));
+create policy space_invites_insert_by_owner on public.space_invites for insert
+  with check (
+    invited_by = auth.uid()
+    and exists (select 1 from public.spaces s where s.id = space_id and s.owner_id = auth.uid())
+  );
+create policy space_invites_delete_by_owner on public.space_invites for delete
+  using (exists (select 1 from public.spaces s where s.id = space_id and s.owner_id = auth.uid()));
+
+-- Extend the signup trigger: profile row first, then claim pending invites.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.email)
+  on conflict (id) do nothing;
+
+  if new.email is not null then
+    insert into public.space_members (space_id, user_id, role)
+    select space_id, new.id, 'member'
+    from public.space_invites
+    where email = lower(new.email)
+    on conflict do nothing;
+
+    delete from public.space_invites where email = lower(new.email);
+  end if;
+
+  return new;
+end;
+$$;
+

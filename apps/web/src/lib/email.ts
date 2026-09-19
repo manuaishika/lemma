@@ -46,6 +46,32 @@ export async function sendReminderEmail(to: string, capture: Capture): Promise<b
   return !error;
 }
 
+/** "X invited you to a Lemma space." Returns false (no throw) when Resend isn't configured. */
+export async function sendInviteEmail(to: string, spaceName: string, inviterEmail: string): Promise<boolean> {
+  if (!resend) return false;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${inviterEmail} invited you to "${spaceName}" on Lemma`,
+    html: `
+      <div style="font-family: Georgia, 'Newsreader', serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+        <p style="font-style: italic; color: #8a8a8a; margin-bottom: 24px;">Lemma</p>
+        <p><strong>${escapeHtml(inviterEmail)}</strong> invited you to a shared space, <strong>${escapeHtml(spaceName)}</strong>.</p>
+        <p style="color: #4a4a4a;">Create an account with this email address and it will be waiting for you.</p>
+        <p style="margin-top: 32px;">
+          <a href="${appUrl}/login?mode=signup" style="background: #2d5f4c; color: #fdfcfa; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-family: system-ui, sans-serif;">
+            Create your account
+          </a>
+        </p>
+      </div>
+    `,
+  });
+
+  return !error;
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

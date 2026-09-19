@@ -18,10 +18,18 @@ export function InviteForm({ spaceId }: { spaceId: string }) {
       body: JSON.stringify({ email }),
     });
     if (res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setMessage(
+        body.pending
+          ? body.emailed
+            ? "Invite emailed — they'll join when they sign up."
+            : "Invite saved — they'll join when they sign up with that email."
+          : "Added",
+      );
       setStatus("done");
       setEmail("");
       router.refresh();
-      setTimeout(() => setStatus("idle"), 1500);
+      setTimeout(() => setStatus("idle"), 4000);
     } else {
       const body = await res.json().catch(() => ({}));
       setMessage(body.error || "Could not add that person");
@@ -49,7 +57,7 @@ export function InviteForm({ spaceId }: { spaceId: string }) {
         </button>
       </form>
       {status === "error" && <p className="mt-2 text-sm text-red-700">{message}</p>}
-      {status === "done" && <p className="mt-2 text-sm text-accent">Added</p>}
+      {status === "done" && <p className="mt-2 text-sm text-accent">{message}</p>}
     </div>
   );
 }

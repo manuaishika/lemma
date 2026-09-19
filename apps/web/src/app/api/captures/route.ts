@@ -53,6 +53,7 @@ export async function POST(req: Request) {
 
   if (!text && capture_type !== "screenshot") return badRequest("text is required");
   if (capture_type === "screenshot" && !body.image_path) return badRequest("image_path is required");
+  if (!body.user_note?.trim()) return badRequest("A note is required — write why this mattered to you.");
   if (capture_type === "link" && !body.link_url) return badRequest("link_url is required");
 
   const { data, error } = await ctx.supabase

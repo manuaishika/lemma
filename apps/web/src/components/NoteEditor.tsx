@@ -38,7 +38,7 @@ export function NoteEditor({ capture }: { capture: Capture }) {
       <div className="mt-2 flex items-center gap-3">
         <button
           onClick={save}
-          disabled={status === "saving" || note === (capture.user_note ?? "")}
+          disabled={status === "saving" || !note.trim() || note === (capture.user_note ?? "")}
           className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft disabled:opacity-50"
         >
           {status === "saving" ? "Saving…" : "Save note"}

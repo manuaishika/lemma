@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { InviteMemberInput } from "@lemma/shared";
 import { CORS_HEADERS, badRequest, corsPreflight, isResponse, requireUser } from "@/lib/api";
+import { sendInviteEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -41,10 +42,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   });
   if (lookupErr) return badRequest(lookupErr.message);
   if (!userId) {
-    return NextResponse.json(
-      { error: "No Lemma account with that email yet." },
-      { status: 404, headers: CORS_HEADERS },
-    );
+    // No account yet: park a pending invite; handle_new_user() claims it on signup.
+    const { data: space } = await ctx.supabase.from("spaces").select("name").eq("id", id).single();
+    const { data: invite, error: inviteErr } = await ctx.supabase
+      .from("space_invites")
+      .upsert(
+        { space_id: id, email: email.toLowerCase(), invited_by: ctx.user.id },
+        { onConflict: "space_id,email" },
+      )
+      .select("*")
+      .single();
+    if (inviteErr) return badRequest(inviteErr.message);
+
+    const emailed = await sendInviteEmail(email, space?.name ?? "a space", ctx.user.email ?? "A friend");
+    return NextResponse.json({ invite, pending: true, emailed }, { status: 201, headers: CORS_HEADERS });
   }
 
   // RLS on space_members requires the caller to own this space.

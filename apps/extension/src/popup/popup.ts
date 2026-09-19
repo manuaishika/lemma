@@ -99,14 +99,14 @@ async function initCaptureView(pending: PendingCapture, email: string) {
       });
       explanation = result.explanation;
       dictionary = result.dictionary_definition;
-      explanationEl.textContent = explanation ?? "No explanation available — your note still saves.";
+      explanationEl.textContent = explanation ?? "No explanation available — your note is what counts.";
       if (dictionary) {
         dictTextEl.textContent = dictionary;
         dictEl.hidden = false;
       }
     } catch (err) {
       if (err instanceof AuthError) return initConnectView();
-      explanationEl.textContent = "Could not fetch an explanation. Your note still saves.";
+      explanationEl.textContent = "Could not fetch an explanation. Your note is what counts.";
     }
   }
 
@@ -117,6 +117,13 @@ async function initCaptureView(pending: PendingCapture, email: string) {
         statusEl.className = "status error";
         return;
       }
+    }
+
+    if (!noteEl.value.trim()) {
+      statusEl.textContent = "Write why this mattered to you first";
+      statusEl.className = "status error";
+      noteEl.focus();
+      return;
     }
 
     saveBtn.disabled = true;
@@ -142,7 +149,7 @@ async function initCaptureView(pending: PendingCapture, email: string) {
         image_path,
         explanation,
         dictionary_definition: dictionary,
-        user_note: noteEl.value.trim() || null,
+        user_note: noteEl.value.trim(),
       });
 
       statusEl.textContent = `Saved “${text ? buildDisplayTitle(text, captureType === "note" ? "note" : "term") : captureType}”`;

@@ -50,6 +50,28 @@ describe("review", () => {
   });
 });
 
+describe("brief constants", () => {
+  it("applies the exact ease delta per grade from a 2.5 card", () => {
+    const base = { easeFactor: 2.5, intervalDays: 6, repetitions: 2 };
+    expect(review(base, 0, NOW).easeFactor).toBe(2.3);
+    expect(review(base, 1, NOW).easeFactor).toBe(2.35);
+    expect(review(base, 2, NOW).easeFactor).toBe(2.5);
+    expect(review(base, 3, NOW).easeFactor).toBe(2.65);
+  });
+
+  it("computes the next interval from the ease *before* the delta", () => {
+    const base = { easeFactor: 2.5, intervalDays: 6, repetitions: 2 };
+    // Easy would give round(6 * 2.65) = 16 if the new ease were used; the brief says 15.
+    expect(review(base, 3, NOW).intervalDays).toBe(15);
+    expect(review(base, 1, NOW).intervalDays).toBe(15);
+  });
+
+  it("Hard is not a lapse", () => {
+    const out = review({ easeFactor: 2.5, intervalDays: 6, repetitions: 2 }, 1, NOW);
+    expect(out.repetitions).toBe(3);
+  });
+});
+
 describe("previewIntervals", () => {
   it("returns an interval for every grade", () => {
     const preview = previewIntervals({ easeFactor: 2.5, intervalDays: 10, repetitions: 3 });

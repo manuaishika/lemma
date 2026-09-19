@@ -23,6 +23,8 @@ export default async function SpaceSettingsPage({ params }: { params: Promise<{ 
     .select("user_id, role, profile:profiles(email, display_name)")
     .eq("space_id", id);
 
+  const { data: invites } = await supabase.from("space_invites").select("id, email").eq("space_id", id);
+
   return (
     <div>
       <Link href={`/app?space=${id}`} className="text-sm text-ink-soft underline underline-offset-4">
@@ -38,13 +40,18 @@ export default async function SpaceSettingsPage({ params }: { params: Promise<{ 
               {m.profile?.email ?? m.user_id} {m.role === "owner" && <span className="text-ink-faint">(owner)</span>}
             </li>
           ))}
+          {(invites ?? []).map((i) => (
+            <li key={i.id}>
+              {i.email} <span className="text-ink-faint">(invited — hasn&apos;t signed up yet)</span>
+            </li>
+          ))}
         </ul>
       </section>
 
       <section className="mt-8">
         <h2 className="text-xs uppercase tracking-wide text-ink-faint">Invite</h2>
         <p className="mt-1 text-sm text-ink-faint">
-          They need a Lemma account already — invite by the email they signed up with.
+          Invite anyone by email. If they don't have an account yet, the invite waits for them.
         </p>
         <div className="mt-3">
           <InviteForm spaceId={id} />

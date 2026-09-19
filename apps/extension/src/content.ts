@@ -1,5 +1,6 @@
 import { enclosingSentence, normalizeSelection } from "@lemma/shared";
 import type { SelectionCapture } from "./types.js";
+import { startRegionSelect } from "./region.js";
 
 let lastSelectionText = "";
 let lastSelectionSentence = "";
@@ -21,6 +22,11 @@ document.addEventListener("mouseup", () => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.action === "startRegionSelect") {
+    startRegionSelect();
+    sendResponse({ ok: true });
+    return false;
+  }
   if (message?.action === "getCapture") {
     const sel = window.getSelection();
     const live = normalizeSelection(sel?.toString() ?? "");

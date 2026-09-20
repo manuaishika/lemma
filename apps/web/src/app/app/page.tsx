@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Capture } from "@lemma/shared";
 import { createClient } from "@/lib/supabase/server";
 import { CaptureCard } from "@/components/CaptureCard";
+import { resurfaceCounts } from "@/lib/resurfaceCounts";
 
 export const dynamic = "force-dynamic";
 
@@ -39,10 +40,7 @@ export default async function VaultPage({
     }
   }
 
-  const { count: dueCount } = await supabase
-    .from("srs_cards")
-    .select("id", { count: "exact", head: true })
-    .lte("due_at", new Date().toISOString());
+  const { review: dueCount, revisit: revisitCount } = await resurfaceCounts(supabase);
 
   const qs = space ? `?space=${space}` : "";
 
@@ -50,11 +48,18 @@ export default async function VaultPage({
     <div>
       <div className="flex items-baseline justify-between">
         <h1 className="font-serif text-3xl text-ink">{space ? spaceName : "Vault"}</h1>
-        {dueCount ? (
-          <Link href="/app/review" className="text-sm text-accent underline underline-offset-4">
-            {dueCount} due for review
-          </Link>
-        ) : null}
+        <div className="flex items-baseline gap-5">
+          {dueCount ? (
+            <Link href="/app/review" className="text-sm text-accent underline underline-offset-4">
+              {dueCount} due for review
+            </Link>
+          ) : null}
+          {revisitCount ? (
+            <Link href="/app/revisit" className="text-sm text-accent underline underline-offset-4">
+              {revisitCount} to revisit
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <form className="mt-6">

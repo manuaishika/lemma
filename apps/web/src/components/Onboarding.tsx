@@ -446,7 +446,7 @@ export function Onboarding() {
               {[
                 ["Capture", "Right-click a word, passage, screenshot, link or page."],
                 ["Meaning", "Definition first, then how it's used, then your note."],
-                ["It comes back", "Again, Hard, Good or Easy sets when you see it next."],
+                ["It comes back", "Words come back for review; links and pages as a gentle reminder."],
                 ["Spaces", "Share any capture with someone by email."],
               ].map(([k, v]) => (
                 <li key={k} className="flex gap-4 py-3">

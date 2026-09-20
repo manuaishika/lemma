@@ -21,11 +21,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const patch: Record<string, unknown> = {};
-  for (const key of ["user_note", "capture_type", "explanation", "dictionary_definition", "encyclopedic_summary", "space_id"] as const) {
+  for (const key of ["user_note", "capture_type", "explanation", "dictionary_definition", "encyclopedic_summary", "space_id", "resurface", "remind_at", "reminder_sent"] as const) {
     if (key in body) patch[key] = body[key];
   }
   if (Object.keys(patch).length === 0) return badRequest("no updatable fields");
   if ("user_note" in patch) patch.user_note = String(patch.user_note ?? "").trim() || null;
+  if ("resurface" in patch && patch.resurface !== null && !["review", "revisit", "keep"].includes(String(patch.resurface))) {
+    return badRequest("resurface must be review, revisit or keep");
+  }
+  if ("remind_at" in patch && Number.isNaN(Date.parse(String(patch.remind_at)))) {
+    return badRequest("remind_at must be a date");
+  }
 
   const { data, error } = await ctx.supabase
     .from("captures")

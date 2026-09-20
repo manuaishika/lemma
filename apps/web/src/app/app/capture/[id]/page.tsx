@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Capture, Space, SrsCard } from "@lemma/shared";
+import { effectiveResurface, type Capture, type Space, type SrsCard } from "@lemma/shared";
 import { createClient } from "@/lib/supabase/server";
 import { CaptureImage } from "@/components/CaptureImage";
 import { NoteEditor } from "@/components/NoteEditor";
 import { ReferenceLayers } from "@/components/ReferenceLayers";
 import { SpacePicker } from "@/components/SpacePicker";
+import { ResurfaceToggle } from "@/components/ResurfaceToggle";
+import { RevisitActions } from "@/components/RevisitActions";
 import { DeleteCaptureButton } from "@/components/DeleteCaptureButton";
 
 export const dynamic = "force-dynamic";
@@ -66,15 +68,27 @@ export default async function CapturePage({ params }: { params: Promise<{ id: st
 
       <NoteEditor capture={c} />
 
+      <ResurfaceToggle capture={c} />
+      {effectiveResurface(c) === "revisit" && new Date(c.remind_at).getTime() <= Date.now() && (
+        <div className="mt-4">
+          <p className="text-sm text-ink-soft">Still want to look at this?</p>
+          <RevisitActions captureId={c.id} />
+        </div>
+      )}
+
       <SpacePicker captureId={c.id} current={c.space_id} spaces={(spaces as Space[]) ?? []} />
 
       <section className="mt-10 flex items-center justify-between border-t border-line pt-4 text-sm text-ink-faint">
         <span>
-          {card
-            ? `Review: ${card.repetitions} reps · ease ${card.ease_factor.toFixed(2)} · next ${new Date(
-                card.due_at,
-              ).toLocaleDateString()}`
-            : "No review card"}
+          {effectiveResurface(c) === "review"
+            ? card
+              ? `Review: ${card.repetitions} reps · ease ${card.ease_factor.toFixed(2)} · next ${new Date(
+                  card.due_at,
+                ).toLocaleDateString()}`
+              : "No review card"
+            : effectiveResurface(c) === "revisit"
+              ? `Reminder: ${new Date(c.remind_at).toLocaleDateString()}`
+              : "Not coming back"}
         </span>
         <DeleteCaptureButton id={c.id} />
       </section>

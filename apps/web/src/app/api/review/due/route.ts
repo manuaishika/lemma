@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { DueCard } from "@lemma/shared";
+import { effectiveResurface, type DueCard } from "@lemma/shared";
 import { CORS_HEADERS, badRequest, corsPreflight, isResponse, requireUser } from "@/lib/api";
 
 export const runtime = "nodejs";
@@ -19,16 +19,17 @@ export async function GET(req: Request) {
     .select("*, capture:captures(*)")
     .lte("due_at", new Date().toISOString())
     .order("due_at", { ascending: true })
-    .limit(limit);
+    .limit(limit * 3);
 
   if (error) return badRequest(error.message);
 
   const due: DueCard[] = (data ?? [])
-    .filter((row) => row.capture)
+    .filter((row) => row.capture && effectiveResurface(row.capture) === "review")
     .map((row) => {
       const { capture, ...card } = row as typeof row & { capture: DueCard["capture"] };
       return { card, capture };
-    });
+    })
+    .slice(0, limit);
 
   return NextResponse.json({ due }, { headers: CORS_HEADERS });
 }

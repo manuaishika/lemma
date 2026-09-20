@@ -36,6 +36,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/review" className="text-ink-soft hover:text-ink">
               Review
             </Link>
+            <Link href="/app/revisit" className="text-ink-soft hover:text-ink">
+              Revisit
+            </Link>
             <Suspense fallback={null}>
               <SpaceSwitcher spaces={(spaces as Space[]) ?? []} />
             </Suspense>

@@ -20,7 +20,7 @@ export async function sendReminderEmail(to: string, capture: Capture): Promise<b
   if (!resend) return false;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const link = `${appUrl}/app/capture/${capture.id}`;
+  const link = `${appUrl}/app/revisit`;
   const label = captureLabel(capture);
 
   const { error } = await resend.emails.send({

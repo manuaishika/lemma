@@ -2,6 +2,9 @@
 
 export type CaptureType = "term" | "note" | "screenshot" | "link";
 
+/** How a capture comes back: graded review, a gentle reminder, or never. */
+export type Resurface = "review" | "revisit" | "keep";
+
 /**
  * Review grades, lowest-to-highest recall quality.
  * 0 Again — failed, 1 Hard, 2 Good, 3 Easy.
@@ -44,6 +47,8 @@ export interface Capture {
   /** When the "still want to look into this?" reminder email goes out. */
   remind_at: string;
   reminder_sent: boolean;
+  /** null = the default for this capture type (see defaultResurface). */
+  resurface: Resurface | null;
   created_at: string;
   updated_at: string;
 }
@@ -116,6 +121,10 @@ export interface UpdateCaptureInput {
   encyclopedic_summary?: string | null;
   /** Move into a shared space, or null for your personal vault. */
   space_id?: string | null;
+  /** null = go back to the automatic choice for this capture type. */
+  resurface?: Resurface | null;
+  remind_at?: string;
+  reminder_sent?: boolean;
 }
 
 export interface CreateSpaceInput {

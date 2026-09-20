@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { Capture } from "@lemma/shared";
+import { effectiveResurface, type Capture } from "@lemma/shared";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendReminderEmail } from "@/lib/email";
 
@@ -30,7 +30,11 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const captures = (due ?? []) as Capture[];
+  // Only "revisit" captures get a nudge; graded ones come back through the review queue.
+  const everything = (due ?? []) as Capture[];
+  const captures = everything.filter((c) => effectiveResurface(c) === "revisit");
+  const skip = everything.filter((c) => effectiveResurface(c) !== "revisit").map((c) => c.id);
+  if (skip.length > 0) await supabase.from("captures").update({ reminder_sent: true }).in("id", skip);
   const userIds = [...new Set(captures.map((c) => c.user_id))];
 
   const { data: profiles, error: profilesErr } = await supabase

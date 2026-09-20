@@ -147,12 +147,16 @@ export default async function Home() {
       <Feature
         flip
         eyebrow="It comes back"
-        title="Everything you save returns, not just words."
+        title="Everything you save comes back, the right way."
         demo={<ReviewDemo />}
       >
         <p>
-          Words, screenshots and links all join one review queue. Grade each one Again, Hard, Good or Easy, and Lemma
-          decides when you see it next.
+          Words and formulas come back for a quick recall check. Again, Hard, Good or Easy decides when you see them
+          next.
+        </p>
+        <p>
+          Links, pages and passages come back as a gentle reminder instead: Done or Snooze, no grading. Lemma decides
+          which is which, and you can change any one later.
         </p>
         <p>Bookmarks get forgotten because nothing ever brings them back. This does.</p>
       </Feature>

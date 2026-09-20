@@ -22,7 +22,7 @@ const SLIDES = [
   },
   {
     title: "It comes back",
-    body: "Saved things return on a schedule. Rate each Again, Hard, Good or Easy and Lemma decides when you see it next.",
+    body: "Words come back for a quick review. Links, pages and passages come back as a gentle reminder. Lemma decides when.",
   },
 ];
 

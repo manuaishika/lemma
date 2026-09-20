@@ -52,6 +52,46 @@ async function claudeExplanation(input: ExplainInput): Promise<string | null> {
 
 /** Objective dictionary definition (free, no key). Shown first, at full strength. */
 async function dictionaryDefinition(text: string): Promise<string | null> {
+  // Both sources in parallel; dictionaryapi.dev is free but flaky, Wiktionary backs it up.
+  const [primary, backup] = await Promise.all([dictionaryApiDefinition(text), wiktionaryDefinition(text)]);
+  return primary ?? backup;
+}
+
+const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " };
+
+/** Wiktionary's REST definition endpoint (same Wikimedia infrastructure as Wikipedia). */
+async function wiktionaryDefinition(text: string): Promise<string | null> {
+  const term = text.trim();
+  if (!term || term.length < 2 || /\s/.test(term)) return null;
+  try {
+    const res = await fetch(
+      `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(term.toLowerCase())}`,
+      { headers: { "user-agent": "Lemma/1.0 (reading-notes app)", accept: "application/json" }, signal: AbortSignal.timeout(4000) },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      en?: Array<{ partOfSpeech?: string; definitions?: Array<{ definition?: string }> }>;
+    };
+    for (const entry of data.en ?? []) {
+      for (const d of entry.definitions ?? []) {
+        const clean = (d.definition ?? "")
+          .replace(/<[^>]*>/g, "")
+          .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) => ENTITIES[m] ?? m)
+          .replace(/\s+/g, " ")
+          .trim();
+        if (clean.length >= 8) {
+          const pos = entry.partOfSpeech?.toLowerCase();
+          return pos ? `(${pos}) ${clean}` : clean;
+        }
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function dictionaryApiDefinition(text: string): Promise<string | null> {
   const term = text.trim();
   // The dictionary endpoint only knows single words.
   if (!term || term.length < 2 || /\s/.test(term)) return null;

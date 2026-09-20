@@ -14,7 +14,7 @@ export function DeleteCaptureButton({ id }: { id: string }) {
           router.refresh();
         }
       }}
-      className="text-sm text-ink-faint underline underline-offset-4 hover:text-red-700"
+      className="text-sm text-ink-faint underline underline-offset-4 hover:text-red"
     >
       Delete
     </button>

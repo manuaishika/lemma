@@ -5,6 +5,7 @@ import type { Space } from "@lemma/shared";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/SignOutButton";
 import { SpaceSwitcher } from "@/components/SpaceSwitcher";
+import { PendingCaptureSync } from "@/components/PendingCaptureSync";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -36,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <SignOutButton />
         </div>
       </header>
+      <PendingCaptureSync />
       <div className="mx-auto max-w-reading px-6 py-10">{children}</div>
     </div>
   );

@@ -2,27 +2,250 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------- design tokens ---------- */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+
+  --paper: #fdfcfa;
+  --paper-warm: #f7f5f1;
+  --surface: #ffffff;
+  --line: #e8e5e0;
+  --line-soft: #f0ede8;
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-faint: #8a8a8a;
+  --ink-ghost: #b8b6b2;
+  --accent: #2d5f4c;
+  --accent-light: #eef4f1;
+  --accent-dark: #234a3c;
+  --red: #b3453a;
+  --amber: #a87229;
+  --blue: #2c5578;
+
+  --spring: cubic-bezier(0.34, 1.42, 0.5, 1); /* overshoots then settles */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1); /* smooth, no overshoot */
+
+  --shadow-sm: 0 1px 2px rgba(26, 22, 18, 0.04), 0 2px 6px rgba(26, 22, 18, 0.03);
+  --shadow-md: 0 2px 4px rgba(26, 22, 18, 0.04), 0 8px 24px rgba(26, 22, 18, 0.07);
+  --shadow-lg: 0 4px 8px rgba(26, 22, 18, 0.05), 0 16px 48px rgba(26, 22, 18, 0.11);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141412;
+    --paper-warm: #1b1a18;
+    --surface: #201f1c;
+    --line: #312f2b;
+    --line-soft: #282622;
+    --ink: #f0eee9;
+    --ink-soft: #c4c0b8;
+    --ink-faint: #8f8b83;
+    --ink-ghost: #65625c;
+    --accent: #7cb89f;
+    --accent-light: #1e2c26;
+    --accent-dark: #98cfb6;
+    --red: #d97b6f;
+    --amber: #d4a259;
+    --blue: #7fa8ce;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.5);
+  }
 }
 
 body {
-  background-color: theme("colors.paper");
-  color: theme("colors.ink");
+  background-color: var(--paper);
+  color: var(--ink);
   font-feature-settings: "kern";
   -webkit-font-smoothing: antialiased;
 }
 
 /* The user's own understanding — the artifact. */
 .note-artifact {
-  border-left: 2px solid theme("colors.accent");
+  border-left: 2px solid var(--accent);
   padding-left: 1rem;
-  color: theme("colors.ink");
+  color: var(--ink);
 }
 
 /* Auto-explanation — recessive scaffolding. */
 .explanation-scaffold {
-  color: theme("colors.ink-faint");
+  color: var(--ink-faint);
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+/* ---------- motion ---------- */
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.press {
+  transition: transform 0.35s var(--spring), box-shadow 0.3s var(--ease),
+    background-color 0.2s var(--ease), opacity 0.2s var(--ease);
+}
+.press:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.press:not(:disabled):active {
+  transform: scale(0.97);
+}
+.press:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes ob-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ob-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes ob-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+@keyframes ob-bump {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes ob-fly {
+  0% { left: 0; opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: calc(100% - 26px); opacity: 0; }
+}
+@keyframes ob-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ob-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* screens: children rise in 70ms apart */
+/* `backwards`, not `both`: a lingering end-state would pin opacity/transform and
+   override disabled dimming, hover lift and press scale on these elements. */
+.ob-screen > * {
+  animation: ob-rise 0.6s var(--spring) backwards;
+}
+/* these start hidden by their own state, so they must not fade in on entry */
+.ob-screen > .ob-grades,
+.ob-screen > .ob-panel {
+  animation: none;
+}
+.ob-screen > *:nth-child(2) { animation-delay: 70ms; }
+.ob-screen > *:nth-child(3) { animation-delay: 140ms; }
+.ob-screen > *:nth-child(4) { animation-delay: 210ms; }
+.ob-screen > *:nth-child(5) { animation-delay: 280ms; }
+.ob-screen > *:nth-child(6) { animation-delay: 350ms; }
+.ob-screen > *:nth-child(7) { animation-delay: 420ms; }
+.ob-screen > *:nth-child(8) { animation-delay: 490ms; }
+
+/* progress rail */
+.ob-rail { display: flex; gap: 6px; }
+.ob-pip { flex: 1; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.ob-pip i {
+  display: block; height: 100%; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.6s var(--ease);
+}
+.ob-pip.done i { transform: scaleX(1); }
+
+/* screen 2 — the word */
+.ob-word {
+  font: inherit; color: inherit; cursor: pointer; padding: 0 2px; border-radius: 3px;
+  border-bottom: 2px solid var(--accent);
+  animation: ob-pulse 2s var(--ease) infinite;
+  transition: background-color 0.3s var(--ease);
+}
+.ob-word.on {
+  background: var(--accent-light); animation: none;
+}
+.ob-panel {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows 0.5s var(--ease), opacity 0.4s var(--ease);
+}
+.ob-panel.open { grid-template-rows: 1fr; opacity: 1; }
+.ob-panel > div { overflow: hidden; }
+.ob-shimmer {
+  height: 10px; border-radius: 5px;
+  background: linear-gradient(90deg, var(--line-soft) 25%, var(--line) 50%, var(--line-soft) 75%);
+  background-size: 200% 100%; animation: ob-shimmer 1.2s linear infinite;
+}
+
+/* screen 3 — the note */
+.ob-note {
+  width: 100%; resize: none; border: 2px solid var(--accent); border-radius: 12px;
+  background: var(--surface); color: var(--ink); padding: 14px 16px; font: inherit; line-height: 1.55;
+  transition: transform 0.4s var(--spring), box-shadow 0.3s var(--ease);
+}
+.ob-note:focus { outline: none; transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* screen 4 — the card stack */
+.ob-stack { position: relative; height: 230px; perspective: 1000px; }
+.ob-card {
+  position: absolute; inset: 0; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-md);
+  transform-origin: 50% 100%;
+  transition: transform 0.6s var(--spring), opacity 0.5s var(--ease);
+}
+.ob-card.l1 { transform: translateY(14px) scale(0.95); opacity: 0.6; }
+.ob-card.l2 { transform: translateY(26px) scale(0.9); opacity: 0.35; }
+.ob-stack.launched .ob-card.l1 { transform: none; opacity: 1; }
+.ob-stack.launched .ob-card.l2 { transform: translateY(14px) scale(0.95); opacity: 0.6; }
+.ob-card.front { cursor: pointer; }
+.ob-card.front.gone {
+  transform: translateY(-130%) rotate(-3deg); opacity: 0;
+  transition: transform 0.7s var(--ease), opacity 0.55s var(--ease);
+}
+.ob-flip {
+  position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.8s var(--spring);
+}
+.ob-flip.flipped { transform: rotateY(180deg); }
+.ob-face {
+  position: absolute; inset: 0; border-radius: 16px; padding: 22px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column; justify-content: center; background: var(--surface);
+}
+.ob-face.back { transform: rotateY(180deg); justify-content: flex-start; overflow-y: auto; }
+.ob-grades {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  opacity: 0; transform: translateY(24px); pointer-events: none;
+  transition: transform 0.55s var(--spring), opacity 0.4s var(--ease);
+}
+.ob-grades.show { opacity: 1; transform: none; pointer-events: auto; }
+
+/* screen 5 — spaces */
+.ob-node {
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); border: 2px solid var(--line); color: var(--ink-soft);
+  font: 500 18px var(--font-newsreader), Georgia, serif;
+  transition: background-color 0.35s var(--ease), border-color 0.35s var(--ease), color 0.35s var(--ease);
+}
+.ob-node.near { border-color: var(--accent); color: var(--ink); }
+.ob-wire { position: relative; flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.ob-wire i {
+  position: absolute; inset: 0; border-radius: 2px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.9s var(--ease);
+}
+.ob-fly {
+  position: absolute; top: -11px; left: 0; width: 26px; height: 18px; border-radius: 4px;
+  background: var(--surface); border: 2px solid var(--accent); opacity: 0;
+}
+.ob-space.sent .ob-wire i { transform: scaleX(1); }
+.ob-space.sent .ob-fly { animation: ob-fly 0.9s var(--ease) forwards; }
+.ob-space.sent .ob-node.far {
+  background: var(--accent); border-color: var(--accent); color: var(--surface);
+  transition-delay: 0.85s; animation: ob-bump 0.6s var(--spring) 0.85s;
+}
+
+/* screen 7 — done */
+.ob-check { animation: ob-pop 0.6s var(--spring) both; }
+.ob-check path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: ob-draw 0.5s var(--ease) 0.35s forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

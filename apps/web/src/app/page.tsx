@@ -39,10 +39,10 @@ export default async function Home() {
 
       <div className="mt-8 flex items-center gap-4">
         <Link
-          href="/login?mode=signup"
+          href="/welcome"
           className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft"
         >
-          Create an account
+          Try it, no account needed
         </Link>
         <Link href="/login" className="text-sm text-ink-soft underline underline-offset-4">
           Sign in

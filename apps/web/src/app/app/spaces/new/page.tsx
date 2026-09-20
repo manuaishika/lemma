@@ -50,7 +50,7 @@ export default function NewSpacePage() {
           Create
         </button>
       </form>
-      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 text-sm text-red">{error}</p>}
     </div>
   );
 }

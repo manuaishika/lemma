@@ -56,7 +56,7 @@ export function InviteForm({ spaceId }: { spaceId: string }) {
           Invite
         </button>
       </form>
-      {status === "error" && <p className="mt-2 text-sm text-red-700">{message}</p>}
+      {status === "error" && <p className="mt-2 text-sm text-red">{message}</p>}
       {status === "done" && <p className="mt-2 text-sm text-accent">{message}</p>}
     </div>
   );

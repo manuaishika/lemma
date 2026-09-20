@@ -44,7 +44,7 @@ export function NoteEditor({ capture }: { capture: Capture }) {
           {status === "saving" ? "Saving…" : "Save note"}
         </button>
         {status === "saved" && <span className="text-sm text-accent">Saved</span>}
-        {status === "error" && <span className="text-sm text-red-700">Could not save</span>}
+        {status === "error" && <span className="text-sm text-red">Could not save</span>}
       </div>
     </div>
   );

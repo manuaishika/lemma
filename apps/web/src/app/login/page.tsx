@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useGoogleEnabled } from "@/lib/useGoogleEnabled";
 
 function LoginForm() {
   const router = useRouter();
@@ -18,17 +19,7 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   // Shown automatically once the Google provider is enabled in Supabase
   // (Auth → Providers) — no redeploy or env flag needed.
-  const [googleEnabled, setGoogleEnabled] = useState(false);
-
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
-    fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s) => setGoogleEnabled(Boolean(s?.external?.google)))
-      .catch(() => {});
-  }, []);
+  const googleEnabled = useGoogleEnabled();
   const [checkEmail, setCheckEmail] = useState(false);
 
   async function signInWithGoogle() {
@@ -132,7 +123,7 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full rounded-md border border-line bg-paper-raised px-3 py-2 text-sm outline-none focus:border-accent"
         />
-        {error && <p className="text-sm text-red-700">{error}</p>}
+        {error && <p className="text-sm text-red">{error}</p>}
         <button
           type="submit"
           disabled={busy}

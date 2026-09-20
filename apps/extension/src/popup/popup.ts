@@ -9,7 +9,25 @@ const PENDING_KEY = "lemma_pending_capture";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
+const ONBOARDED_KEY = "lemma_onboarded";
+
+const SLIDES = [
+  {
+    title: "Right-click to save",
+    body: "Select a word, then right-click and choose Save to Lemma. Screenshots and links work the same way.",
+  },
+  {
+    title: "Say why it mattered",
+    body: "Write one sentence in your own words. Lemma asks for it every time, because it's the part you keep.",
+  },
+  {
+    title: "It comes back",
+    body: "Saved things return on a schedule. Rate each Again, Hard, Good or Easy and Lemma decides when you see it next.",
+  },
+];
+
 const views = {
+  onboard: $("onboard-view"),
   connect: $("connect-view"),
   capture: $("capture-view"),
   empty: $("empty-view"),
@@ -23,6 +41,43 @@ async function getPendingCapture(): Promise<PendingCapture | null> {
   if (!stored[PENDING_KEY]) return null;
   await chrome.storage.local.remove(PENDING_KEY);
   return stored[PENDING_KEY] as PendingCapture;
+}
+
+function initOnboarding() {
+  show("onboard");
+  const dots = $("ob-dots");
+  const slide = $("ob-slide");
+  const nextBtn = $("ob-next");
+  let i = 0;
+
+  dots.replaceChildren(...SLIDES.map(() => document.createElement("i")));
+
+  function render() {
+    const s = SLIDES[i]!;
+    $("ob-title").textContent = s.title;
+    $("ob-body").textContent = s.body;
+    dots.querySelectorAll("i").forEach((d, n) => d.classList.toggle("on", n <= i));
+    nextBtn.textContent = i === SLIDES.length - 1 ? "Get started" : "Next";
+    slide.style.animation = "none";
+    void slide.offsetWidth; // restart the entry animation
+    slide.style.animation = "";
+  }
+
+  async function finish() {
+    await chrome.storage.local.set({ [ONBOARDED_KEY]: true });
+    void main(); // a capture that opened the popup is still waiting in storage
+  }
+
+  nextBtn.addEventListener("click", () => {
+    if (i < SLIDES.length - 1) {
+      i += 1;
+      render();
+    } else {
+      void finish();
+    }
+  });
+  $("ob-skip").addEventListener("click", () => void finish());
+  render();
 }
 
 function initConnectView() {
@@ -164,6 +219,9 @@ async function initCaptureView(pending: PendingCapture, email: string) {
 }
 
 async function main() {
+  const seen = await chrome.storage.local.get(ONBOARDED_KEY);
+  if (!seen[ONBOARDED_KEY]) return initOnboarding();
+
   const session = await getSession();
   if (!session) return initConnectView();
 

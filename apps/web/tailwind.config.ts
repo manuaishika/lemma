@@ -1,19 +1,28 @@
 import type { Config } from "tailwindcss";
 
-// Lemma design system. Warm paper, quiet, reading-first.
+// Lemma design system. Warm paper, quiet, reading-first. Values live in
+// globals.css as CSS variables (light + dark); Tailwind just names them.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        paper: "#fdfcfa",
-        "paper-raised": "#ffffff",
-        ink: "#1a1a17",
-        "ink-soft": "#57544c",
-        "ink-faint": "#8a867b",
-        line: "#e8e4db",
-        accent: "#2d5f4c",
-        "accent-soft": "#4a7d68",
+        paper: "var(--paper)",
+        "paper-warm": "var(--paper-warm)",
+        "paper-raised": "var(--surface)",
+        ink: "var(--ink)",
+        "ink-soft": "var(--ink-soft)",
+        "ink-faint": "var(--ink-faint)",
+        "ink-ghost": "var(--ink-ghost)",
+        line: "var(--line)",
+        "line-soft": "var(--line-soft)",
+        accent: "var(--accent)",
+        "accent-soft": "var(--accent-dark)",
+        "accent-light": "var(--accent-light)",
+        "accent-dark": "var(--accent-dark)",
+        red: "var(--red)",
+        amber: "var(--amber)",
+        blue: "var(--blue)",
       },
       fontFamily: {
         serif: ["var(--font-newsreader)", "Newsreader", "Georgia", "serif"],
@@ -21,6 +30,15 @@ const config: Config = {
       },
       maxWidth: {
         reading: "42rem",
+      },
+      transitionTimingFunction: {
+        spring: "var(--spring)",
+        smooth: "var(--ease)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
     },
   },

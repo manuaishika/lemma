@@ -19,7 +19,7 @@
         width: 380px;
         background: var(--paper);
         color: var(--ink);
-        font: 14px/1.5 Inter, system-ui, sans-serif;
+        font: 14px/1.5 system-ui, sans-serif;
       }
       .wrap { padding: 16px; }
       .brand { font-family: Newsreader, Georgia, serif; font-style: italic; color: var(--ink-faint); font-size: 13px; }
@@ -52,7 +52,7 @@
         border-left: 2px solid var(--accent);
         border-radius: 0 6px 6px 0;
         padding: 8px 10px;
-        font: 14px/1.55 Inter, system-ui, sans-serif;
+        font: 14px/1.55 system-ui, sans-serif;
         background: #fff;
         outline: none;
       }
@@ -89,11 +89,32 @@
       [hidden] { display: none !important; }
       #connect-view { text-align: center; padding: 28px 8px; }
       #connect-view p { color: var(--ink-soft); }
+      /* first-run onboarding: three short slides, system fonts only */
+      .ob-dots { display: flex; gap: 5px; margin: 6px 0 14px; }
+      .ob-dots i { flex: 1; height: 3px; border-radius: 2px; background: var(--line); transition: background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+      .ob-dots i.on { background: var(--accent); }
+      .ob-slide { animation: ob-rise 0.5s cubic-bezier(0.34, 1.42, 0.5, 1) backwards; }
+      .ob-slide h2 { font: 600 17px/1.3 system-ui, sans-serif; margin: 0 0 6px; }
+      .ob-slide p { margin: 0; color: var(--ink-soft); }
+      @keyframes ob-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div class="brand">Lemma</div>
+
+      <section id="onboard-view" hidden>
+        <div class="ob-dots" id="ob-dots"></div>
+        <div class="ob-slide" id="ob-slide">
+          <h2 id="ob-title"></h2>
+          <p id="ob-body"></p>
+        </div>
+        <div class="row">
+          <button class="primary" id="ob-next">Next</button>
+          <button class="link" id="ob-skip">Skip</button>
+        </div>
+      </section>
 
       <section id="connect-view" hidden>
         <p>Connect your account to start saving words.</p>

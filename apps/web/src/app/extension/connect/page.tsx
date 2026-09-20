@@ -98,7 +98,7 @@ function Connect() {
             and start saving words.
           </p>
         )}
-        {state.kind === "error" && <p className="text-red-700">{state.message}</p>}
+        {state.kind === "error" && <p className="text-red">{state.message}</p>}
       </div>
     </main>
   );

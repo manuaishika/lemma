@@ -197,6 +197,8 @@ button:not(:disabled):active {
 .ob-stack.launched .ob-card.l1 { transform: none; opacity: 1; }
 .ob-stack.launched .ob-card.l2 { transform: translateY(14px) scale(0.95); opacity: 0.6; }
 .ob-card.front { cursor: pointer; }
+/* a fresh card dropping into the deck (remounted per card, so no reverse-fly animation) */
+.ob-card.front.demo-enter { animation: ob-rise 0.55s var(--spring) backwards; }
 .ob-card.front.gone {
   transform: translateY(-130%) rotate(-3deg); opacity: 0;
   transition: transform 0.7s var(--ease), opacity 0.55s var(--ease);

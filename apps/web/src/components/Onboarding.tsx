@@ -46,7 +46,7 @@ function Rail({ step }: { step: number }) {
 
 function ChartCard() {
   return (
-    <svg viewBox="0 0 220 96" width="100%" height="100%" role="img" aria-label="Two price lines diverging, then meeting">
+    <svg viewBox="0 0 220 96" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role="img" aria-label="Two price lines diverging, then meeting">
       <rect width="220" height="96" fill="var(--paper-warm)" />
       <path d="M8 60 C50 58 70 56 100 44 S160 40 212 50" fill="none" stroke="var(--blue)" strokeWidth="2.5" />
       <path d="M8 62 C50 64 70 72 100 76 S160 60 212 52" fill="none" stroke="var(--accent)" strokeWidth="2.5" />

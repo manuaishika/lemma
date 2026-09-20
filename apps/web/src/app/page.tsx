@@ -1,11 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { CaptureDemoPicker } from "@/components/CaptureDemoPicker";
+import { ReviewDemo } from "@/components/ReviewDemo";
+import { SpacesDemo } from "@/components/SpacesDemo";
+import { ReferenceLayers } from "@/components/ReferenceLayers";
 
 export const dynamic = "force-dynamic";
 
 /** Drop the launch video's URL here (mp4/webm). Until then a placeholder holds the space. */
 const VIDEO_URL: string | null = null;
+
+const SAMPLE = {
+  dictionary_definition:
+    "(noun) the simultaneous buying and selling of assets in different markets to profit from a difference in price.",
+  encyclopedic_summary:
+    "Arbitrage is the practice of taking advantage of a price difference between two or more markets, striking a combination of matching deals to capture the imbalance as profit.",
+  explanation:
+    "Here it means the traders bought on the cheaper exchange and sold on the dearer one at the same moment, so the gap turned into risk-free profit.",
+};
 
 function VideoSlot() {
   if (VIDEO_URL) {
@@ -18,20 +31,33 @@ function VideoSlot() {
           <path d="M6 3.5v13l11-6.5z" fill="currentColor" />
         </svg>
       </span>
-      <span className="absolute bottom-3 left-4 text-sm text-ink-faint">See it in action (40s), coming soon</span>
+      <span className="absolute bottom-3 left-4 text-sm text-ink-faint">Watch it in 40 seconds, coming soon</span>
     </div>
   );
 }
 
-function Step({ n, title, body }: { n: string; title: string; body: string }) {
+function Feature({
+  eyebrow,
+  title,
+  children,
+  demo,
+  flip = false,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+  demo: React.ReactNode;
+  flip?: boolean;
+}) {
   return (
-    <div className="flex gap-4">
-      <span className="font-serif text-2xl italic text-ink-faint">{n}</span>
-      <div>
-        <h3 className="font-medium text-ink">{title}</h3>
-        <p className="mt-1 text-sm text-ink-soft">{body}</p>
+    <section className="grid gap-10 border-t border-line py-16 md:grid-cols-2 md:items-center md:gap-14">
+      <div className={flip ? "md:order-2" : ""}>
+        <p className="text-xs uppercase tracking-wide text-ink-faint">{eyebrow}</p>
+        <h2 className="mt-2 font-serif text-3xl leading-tight text-ink">{title}</h2>
+        <div className="mt-4 max-w-md space-y-3 text-[15px] leading-relaxed text-ink-soft">{children}</div>
       </div>
-    </div>
+      <div className={flip ? "md:order-1" : ""}>{demo}</div>
+    </section>
   );
 }
 
@@ -43,73 +69,144 @@ export default async function Home() {
   if (user) redirect("/app");
 
   return (
-    <main className="mx-auto max-w-reading px-6 py-16">
-      <p className="font-serif text-sm italic text-ink-faint">Lemma</p>
-
-      <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">
-        Write down why it mattered. Lemma brings it back until it sticks.
-      </h1>
-      <p className="mt-6 max-w-lg text-lg text-ink-soft">
-        Right-click a word, a formula, a link — anything you don't want to lose while reading —
-        and write one sentence on <em>why it mattered to you</em>. That sentence is what you keep.
-        It returns on a spaced-review schedule, so you remember it instead of losing it in fifty
-        browser tabs.
-      </p>
-
-      <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Link
-          href="/signup"
-          className="press rounded-xl bg-accent px-5 py-3 text-sm font-medium text-paper-raised hover:bg-accent-soft"
-        >
-          Create an account
+    <main className="mx-auto max-w-5xl px-6 pb-20">
+      <header className="flex items-center justify-between py-6">
+        <Link href="/" className="font-serif text-2xl italic text-ink" aria-label="Lemma home">
+          Lemma
         </Link>
-        <Link
-          href="/login"
-          className="press rounded-xl border border-line bg-paper-raised px-5 py-3 text-sm font-medium text-ink"
-        >
-          Sign in
-        </Link>
-        <Link href="/welcome" className="px-2 text-sm text-ink-soft underline underline-offset-4">
-          See how it works
-        </Link>
-      </div>
+        <nav className="flex items-center gap-5 text-sm">
+          <Link href="/login" className="text-ink-soft hover:text-ink">
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="press rounded-xl bg-accent px-4 py-2 font-medium text-paper-raised hover:bg-accent-soft"
+          >
+            Create an account
+          </Link>
+        </nav>
+      </header>
 
-      <div className="mt-12 max-w-xl">
-        <VideoSlot />
-      </div>
-
-      <section className="mt-20 space-y-8 border-t border-line pt-10">
-        <h2 className="text-xs uppercase tracking-wide text-ink-faint">How it works</h2>
-        <Step
-          n="1"
-          title="Right-click to save"
-          body="Highlight a word or phrase, right-click any page, or right-click a link — Lemma captures it along with the sentence and page it came from."
-        />
-        <Step
-          n="2"
-          title="Write your own understanding"
-          body="For words, Lemma shows a quick explanation of how it's used in that context (plus a plain dictionary definition), but the field that matters is the one you fill in yourself."
-        />
-        <Step
-          n="3"
-          title="It comes back before you forget it"
-          body="Everything you save enters a spaced-repetition review queue — grade Again / Hard / Good / Easy and it reschedules itself, like flashcards, for every capture type."
-        />
-        <Step
-          n="4"
-          title="Share a space"
-          body="Create a space and invite someone by email. You both add to it, and everything either of you saves shows up for both."
-        />
+      {/* hero: the promise on the left, the real mechanism playing on the right */}
+      <section className="grid gap-12 py-10 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:py-20">
+        <div className="ob-screen">
+          <h1 className="font-serif text-4xl leading-[1.1] text-ink sm:text-5xl">
+            Write down why it mattered. Lemma brings it back until it sticks.
+          </h1>
+          <p className="mt-6 max-w-lg text-lg text-ink-soft">
+            Right-click a word, a formula, a link, anything you don&rsquo;t want to lose while reading. Lemma keeps the
+            meaning, asks you for one sentence on <em>why it mattered</em>, and returns it on a schedule so it
+            actually sticks.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              href="/signup"
+              className="press rounded-xl bg-accent px-5 py-3 text-sm font-medium text-paper-raised hover:bg-accent-soft"
+            >
+              Create an account
+            </Link>
+            <Link
+              href="/login"
+              className="press rounded-xl border border-line bg-paper-raised px-5 py-3 text-sm font-medium text-ink"
+            >
+              Sign in
+            </Link>
+          </div>
+          <p className="mt-4 text-sm text-ink-faint">Works with a right-click. Nothing to copy, paste or file.</p>
+        </div>
+        <div className="ob-screen">
+          <CaptureDemoPicker />
+        </div>
       </section>
 
-      <section className="mt-16 border-t border-line pt-10">
-        <h2 className="text-xs uppercase tracking-wide text-ink-faint">Why not just bookmark it?</h2>
-        <p className="mt-3 max-w-lg text-sm text-ink-soft">
-          Bookmarks and screenshot folders are where things go to be forgotten — you never
-          re-open them. Lemma forces you to write one sentence about why something mattered the
-          moment you save it, and then resurfaces that sentence on a schedule until it sticks.
+      <Feature
+        eyebrow="The meaning first"
+        title="Every save arrives with what it means, then what it meant to you."
+        demo={
+          <div className="rounded-2xl border border-line bg-paper-raised p-5 shadow-md">
+            <p className="font-serif text-3xl text-ink">arbitrage</p>
+            <ReferenceLayers c={SAMPLE} />
+            <div className="mt-5">
+              <p className="text-xs uppercase tracking-wide text-ink-faint">
+                Your note <span className="normal-case tracking-normal">(optional)</span>
+              </p>
+              <p className="note-artifact mt-2 font-serif text-lg leading-relaxed">
+                Making money from a price gap before anyone else notices it.
+              </p>
+            </div>
+          </div>
+        }
+      >
+        <p>
+          The dictionary definition comes first, then the Wikipedia summary, then how your sentence uses the word. Your
+          own note comes last, and it&rsquo;s the only thing on the card that&rsquo;s yours.
         </p>
+        <p>The note is optional, but it&rsquo;s the part Lemma tests you on.</p>
+      </Feature>
+
+      <Feature
+        flip
+        eyebrow="It comes back"
+        title="Everything you save returns, not just words."
+        demo={<ReviewDemo />}
+      >
+        <p>
+          Words, screenshots and links all join one review queue. Grade each one Again, Hard, Good or Easy, and Lemma
+          decides when you see it next.
+        </p>
+        <p>Bookmarks get forgotten because nothing ever brings them back. This does.</p>
+      </Feature>
+
+      <Feature
+        eyebrow="Spaces"
+        title="Share anything with anyone."
+        demo={<SpacesDemo />}
+      >
+        <p>
+          Make a space, invite someone by email, and pick it whenever you save. Words, screenshots, links and whole pages
+          all go in.
+        </p>
+        <p>They don&rsquo;t need an account yet. The invite waits for them, and everything shows who shared it.</p>
+      </Feature>
+
+      <section className="grid gap-10 border-t border-line py-16 md:grid-cols-2 md:items-center md:gap-14">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-ink-faint">Why not just bookmark it?</p>
+          <h2 className="mt-2 font-serif text-3xl leading-tight text-ink">Bookmarks are where things go to be forgotten.</h2>
+          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+            You save it, you never open it again. Lemma asks for one sentence about why it mattered while it&rsquo;s
+            still fresh, then resurfaces that sentence on a schedule until you know it.
+          </p>
+        </div>
+        <VideoSlot />
       </section>
+
+      <section className="rounded-3xl bg-paper-warm px-6 py-14 text-center">
+        <h2 className="mx-auto max-w-xl font-serif text-3xl leading-tight text-ink">
+          Start a vault for the things you don&rsquo;t want to lose.
+        </h2>
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/signup"
+            className="press rounded-xl bg-accent px-6 py-3 text-sm font-medium text-paper-raised hover:bg-accent-soft"
+          >
+            Create an account
+          </Link>
+          <Link
+            href="/login"
+            className="press rounded-xl border border-line bg-paper-raised px-6 py-3 text-sm font-medium text-ink"
+          >
+            Sign in
+          </Link>
+        </div>
+      </section>
+
+      <footer className="mt-12 flex items-center justify-between text-sm text-ink-faint">
+        <span className="font-serif italic">Lemma</span>
+        <Link href="/privacy" className="underline underline-offset-4 hover:text-ink">
+          Privacy
+        </Link>
+      </footer>
     </main>
   );
 }

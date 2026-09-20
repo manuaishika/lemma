@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SPACE_NAME = "Things worth reading";
 const EMAIL = "r@example.com";
 
 function Chart() {
   return (
-    <svg viewBox="0 0 220 96" width="100%" height="100%" aria-hidden>
+    <svg viewBox="0 0 220 96" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" aria-hidden>
       <rect width="220" height="96" fill="var(--paper-warm)" />
       <path d="M8 60 C50 58 70 56 100 44 S160 40 212 50" fill="none" stroke="var(--blue)" strokeWidth="2.5" />
       <path d="M8 62 C50 64 70 72 100 76 S160 60 212 52" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
@@ -26,8 +26,31 @@ export function SpacesDemo() {
   const [mail, setMail] = useState("");
   const [stage, setStage] = useState(0); // 0 name · 1 invite · 2 pending · 3 recipient
   const [pressed, setPressed] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+
+  // Start when it scrolls into view, so a visitor doesn't miss the sequence below the fold.
+  useEffect(() => {
+    const el = root.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setStarted(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setStarted(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
+    if (!started) return;
     setName("");
     setMail("");
     setStage(0);
@@ -49,10 +72,10 @@ export function SpacesDemo() {
     });
     at(mailDone + 2600, () => setStage(3));
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [run]);
+  }, [run, started]);
 
   return (
-    <div>
+    <div ref={root}>
       <div className="sd">
         <div className="sd-head">
           <span>{stage === 3 ? "What they see" : "Your space"}</span>

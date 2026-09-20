@@ -1,4 +1,5 @@
 import type {
+  Space,
   Capture,
   CreateCaptureInput,
   ExplainInput,
@@ -39,6 +40,10 @@ export function explainWord(input: ExplainInput): Promise<ExplainResult> {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function listSpaces(): Promise<{ spaces: Space[] }> {
+  return request<{ spaces: Space[] }>("/api/spaces");
 }
 
 export function createCapture(input: CreateCaptureInput): Promise<{ capture: Capture }> {

@@ -50,29 +50,54 @@ async function claudeExplanation(input: ExplainInput): Promise<string | null> {
   }
 }
 
-/** Generic dictionary gloss, kept only as a fallback reference. */
+/** Objective dictionary definition (free, no key). Shown first, at full strength. */
 async function dictionaryDefinition(text: string): Promise<string | null> {
-  const head = text.trim().split(/\s+/)[0];
-  if (!head || head.length < 2) return null;
+  const term = text.trim();
+  // The dictionary endpoint only knows single words.
+  if (!term || term.length < 2 || /\s/.test(term)) return null;
   try {
     const res = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(head)}`,
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term.toLowerCase())}`,
       { signal: AbortSignal.timeout(4000) },
     );
     if (!res.ok) return null;
     const data = (await res.json()) as Array<{
-      meanings?: Array<{ definitions?: Array<{ definition?: string }> }>;
+      meanings?: Array<{ partOfSpeech?: string; definitions?: Array<{ definition?: string }> }>;
     }>;
-    return data?.[0]?.meanings?.[0]?.definitions?.[0]?.definition ?? null;
+    const meaning = data?.[0]?.meanings?.[0];
+    const def = meaning?.definitions?.[0]?.definition;
+    if (!def) return null;
+    return meaning?.partOfSpeech ? `(${meaning.partOfSpeech}) ${def}` : def;
+  } catch {
+    return null;
+  }
+}
+
+/** Wikipedia's lead summary — catches concepts, effects, theories and proper nouns. */
+async function wikipediaSummary(text: string): Promise<string | null> {
+  const term = text.trim();
+  if (!term || term.length < 2 || term.split(/\s+/).length > 6) return null;
+  try {
+    const title = encodeURIComponent(term.replace(/\s+/g, "_"));
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`, {
+      headers: { "user-agent": "Lemma/1.0 (reading-notes app)", accept: "application/json" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { type?: string; extract?: string };
+    if (data.type !== "standard" || !data.extract) return null; // skip disambiguation pages
+    const sentences = data.extract.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [data.extract];
+    return sentences.slice(0, 2).join("").trim().slice(0, 420) || null;
   } catch {
     return null;
   }
 }
 
 export async function explain(input: ExplainInput): Promise<ExplainResult> {
-  const [explanation, dictionary_definition] = await Promise.all([
+  const [explanation, dictionary_definition, encyclopedic_summary] = await Promise.all([
     claudeExplanation(input),
     dictionaryDefinition(input.text),
+    wikipediaSummary(input.text),
   ]);
-  return { explanation, dictionary_definition };
+  return { explanation, dictionary_definition, encyclopedic_summary };
 }

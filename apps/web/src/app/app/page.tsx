@@ -21,6 +21,24 @@ export default async function VaultPage({
   }
   const { data: captures } = await query;
 
+  // In a space, say who added each capture (by name, not id).
+  let spaceName = "Space";
+  const sharedBy: Record<string, string> = {};
+  if (space) {
+    const { data: sp } = await supabase.from("spaces").select("name").eq("id", space).single();
+    spaceName = sp?.name ?? "Space";
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const ids = [...new Set(((captures as Capture[] | null) ?? []).map((c) => c.user_id))];
+    if (ids.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("id, display_name, email").in("id", ids);
+      for (const p of profs ?? []) {
+        sharedBy[p.id] = p.id === user?.id ? "you" : p.display_name || p.email || "a member";
+      }
+    }
+  }
+
   const { count: dueCount } = await supabase
     .from("srs_cards")
     .select("id", { count: "exact", head: true })
@@ -31,7 +49,7 @@ export default async function VaultPage({
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <h1 className="font-serif text-3xl text-ink">{space ? "Space" : "Vault"}</h1>
+        <h1 className="font-serif text-3xl text-ink">{space ? spaceName : "Vault"}</h1>
         {dueCount ? (
           <Link href="/app/review" className="text-sm text-accent underline underline-offset-4">
             {dueCount} due for review
@@ -58,7 +76,12 @@ export default async function VaultPage({
           </p>
         ) : (
           (captures as Capture[]).map((capture) => (
-            <CaptureCard key={capture.id} capture={capture} href={`/app/capture/${capture.id}${qs}`} />
+            <CaptureCard
+              key={capture.id}
+              capture={capture}
+              href={`/app/capture/${capture.id}${qs}`}
+              sharedBy={space ? sharedBy[capture.user_id] ?? "a member" : undefined}
+            />
           ))
         )}
       </div>

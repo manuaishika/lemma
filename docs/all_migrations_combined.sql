@@ -101,7 +101,6 @@ create trigger words_touch_updated_at
   before update on public.words
   for each row execute function public.touch_updated_at();
 
-
 -- ===== 0002_triggers.sql =====
 -- Structural guarantees:
 --   * every auth user gets a profiles row
@@ -187,7 +186,6 @@ begin
 end;
 $$;
 
-
 -- ===== 0003_rls.sql =====
 -- Row-level security: a user can only ever touch their own rows.
 
@@ -234,7 +232,6 @@ create policy "word_clusters: self insert" on public.word_clusters for insert
   with check (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()));
 create policy "word_clusters: self delete" on public.word_clusters for delete
   using (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()));
-
 
 -- ===== 0004_captures.sql =====
 -- Generalize the vocabulary vault into a general capture model:
@@ -386,7 +383,6 @@ $$;
 revoke all on function public.lookup_user_by_email(text) from public;
 grant execute on function public.lookup_user_by_email(text) to authenticated;
 
-
 -- ===== 0005_captures_rls.sql =====
 -- Replace the old owner-only policies on captures (still named words_* --
 -- table renames don't rename policies) with owner-OR-space-member rules,
@@ -479,7 +475,6 @@ create policy profiles_visible_to_space_cohabitants on public.profiles for selec
     where a.user_id = profiles.id and public.is_space_member(a.space_id)
   ));
 
-
 -- ===== 0006_storage.sql =====
 -- Private bucket for screenshot captures. Objects live at
 -- "{auth.uid()}/{capture id}.png" -- direct storage access is owner-only;
@@ -508,7 +503,6 @@ create policy captures_bucket_owner_delete on storage.objects for delete
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
-
 -- ===== 0007_reminders.sql =====
 -- "Hey, you saved this -- still want to look into it?" reminder emails,
 -- sent once per capture, 3 days after it was saved.
@@ -518,7 +512,6 @@ alter table public.captures add column reminder_sent boolean not null default fa
 
 -- the cron sweep scans exactly this: unset reminders whose time has come.
 create index captures_remind_idx on public.captures (remind_at) where reminder_sent = false;
-
 
 -- ===== 0008_space_invites.sql =====
 -- Pending invites: invite someone by email before they have a Lemma account.
@@ -572,4 +565,58 @@ begin
   return new;
 end;
 $$;
+
+-- ===== 0009_names_and_reference.sql =====
+-- 1. Names. profiles.display_name already exists but nothing filled it.
+--    New signups take it from the signup form (full_name) or Google
+--    (full_name / name), falling back to the part of the email before the @.
+--    This also keeps the 0008 behaviour: claim any pending space invites.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, display_name)
+  values (
+    new.id,
+    new.email,
+    coalesce(
+      nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
+      nullif(trim(new.raw_user_meta_data->>'name'), ''),
+      nullif(split_part(coalesce(new.email, ''), '@', 1), '')
+    )
+  )
+  on conflict (id) do nothing;
+
+  if new.email is not null then
+    insert into public.space_members (space_id, user_id, role)
+    select space_id, new.id, 'member'
+    from public.space_invites
+    where email = lower(new.email)
+    on conflict do nothing;
+
+    delete from public.space_invites where email = lower(new.email);
+  end if;
+
+  return new;
+end;
+$$;
+
+-- Backfill people who signed up before names existed.
+update public.profiles
+   set display_name = split_part(email, '@', 1)
+ where display_name is null and email is not null and split_part(email, '@', 1) <> '';
+
+-- 2. Reference layer: definition (dictionary) / encyclopedic summary (Wikipedia)
+--    / contextual reading (the existing `explanation` column).
+alter table public.captures add column if not exists encyclopedic_summary text;
+
+-- 3. Moving a capture into a space must require membership of that space
+--    (insert already did; update only checked ownership).
+drop policy if exists captures_update_own on public.captures;
+create policy captures_update_own on public.captures for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id and (space_id is null or public.is_space_member(space_id)));
 

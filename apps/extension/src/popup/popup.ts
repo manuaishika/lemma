@@ -1,7 +1,7 @@
 import { buildDisplayTitle, classifyCaptureType, type CaptureType } from "@lemma/shared";
 import { API_BASE } from "../lib/config.js";
 import { clearSession, getSession } from "../lib/auth.js";
-import { AuthError, createCapture, explainWord } from "../lib/api.js";
+import { AuthError, createCapture, explainWord, listSpaces } from "../lib/api.js";
 import { uploadScreenshot } from "../lib/storage.js";
 import type { PendingCapture } from "../types.js";
 
@@ -98,8 +98,12 @@ async function initCaptureView(pending: PendingCapture, email: string) {
   const screenshotEl = $<HTMLImageElement>("screenshotPreview");
   const noteEl = $<HTMLTextAreaElement>("note");
   const explanationEl = $("explanation");
-  const dictEl = $<HTMLDetailsElement>("dict");
-  const dictTextEl = $("dict-text");
+  const refEl = $("ref");
+  const defBlock = $("def-block");
+  const defText = $("def-text");
+  const wikiBlock = $("wiki-block");
+  const wikiText = $("wiki-text");
+  const spaceEl = $<HTMLSelectElement>("space");
   const saveBtn = $<HTMLButtonElement>("save-btn");
   const statusEl = $("status");
 
@@ -112,6 +116,22 @@ async function initCaptureView(pending: PendingCapture, email: string) {
   let captureType: CaptureType;
   let explanation: string | null = null;
   let dictionary: string | null = null;
+  let encyclopedic: string | null = null;
+
+  // Offer every space you belong to; remember the last one you picked.
+  void (async () => {
+    try {
+      const { spaces } = await listSpaces();
+      for (const s of spaces) spaceEl.append(new Option(s.name, s.id));
+      const last = (await chrome.storage.local.get("lemma_last_space"))["lemma_last_space"] as string | undefined;
+      if (last && spaces.some((s) => s.id === last)) spaceEl.value = last;
+    } catch {
+      // offline or signed out: saving to your own vault still works
+    }
+  })();
+  spaceEl.addEventListener("change", () => {
+    void chrome.storage.local.set({ lemma_last_space: spaceEl.value });
+  });
 
   if (pending.kind === "screenshot") {
     captureType = "screenshot";
@@ -127,7 +147,8 @@ async function initCaptureView(pending: PendingCapture, email: string) {
     captureType = "link";
     kindEl.textContent = "link";
     wordInput.placeholder = "Title (optional)";
-    wordInput.value = "";
+    wordInput.value = pending.isPage ? pending.pageTitle : "";
+    kindEl.textContent = pending.isPage ? "page" : "link";
     linkUrlEl.hidden = false;
     linkUrlEl.textContent = pending.linkUrl;
     explanationEl.textContent = "";
@@ -144,7 +165,8 @@ async function initCaptureView(pending: PendingCapture, email: string) {
       kindEl.textContent = captureType === "note" ? "note" : "word";
     });
 
-    explanationEl.textContent = "Looking up how it’s used here…";
+    refEl.hidden = false;
+    explanationEl.textContent = "Looking up…";
     try {
       const result = await explainWord({
         text: pending.text,
@@ -154,14 +176,19 @@ async function initCaptureView(pending: PendingCapture, email: string) {
       });
       explanation = result.explanation;
       dictionary = result.dictionary_definition;
-      explanationEl.textContent = explanation ?? "No explanation available — your note is what counts.";
+      encyclopedic = result.encyclopedic_summary;
       if (dictionary) {
-        dictTextEl.textContent = dictionary;
-        dictEl.hidden = false;
+        defText.textContent = dictionary;
+        defBlock.hidden = false;
       }
+      if (encyclopedic) {
+        wikiText.textContent = encyclopedic;
+        wikiBlock.hidden = false;
+      }
+      explanationEl.textContent = explanation ?? "No context-specific reading for this one.";
     } catch (err) {
       if (err instanceof AuthError) return initConnectView();
-      explanationEl.textContent = "Could not fetch an explanation. Your note is what counts.";
+      explanationEl.textContent = "Couldn't look this up right now. You can still save it.";
     }
   }
 
@@ -172,13 +199,6 @@ async function initCaptureView(pending: PendingCapture, email: string) {
         statusEl.className = "status error";
         return;
       }
-    }
-
-    if (!noteEl.value.trim()) {
-      statusEl.textContent = "Write why this mattered to you first";
-      statusEl.className = "status error";
-      noteEl.focus();
-      return;
     }
 
     saveBtn.disabled = true;
@@ -204,7 +224,9 @@ async function initCaptureView(pending: PendingCapture, email: string) {
         image_path,
         explanation,
         dictionary_definition: dictionary,
-        user_note: noteEl.value.trim(),
+        encyclopedic_summary: encyclopedic,
+        space_id: spaceEl.value || null,
+        user_note: noteEl.value.trim() || null,
       });
 
       statusEl.textContent = `Saved “${text ? buildDisplayTitle(text, captureType === "note" ? "note" : "term") : captureType}”`;

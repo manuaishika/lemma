@@ -37,7 +37,15 @@ export default async function SpaceSettingsPage({ params }: { params: Promise<{ 
         <ul className="mt-3 space-y-1 text-sm text-ink-soft">
           {((members as MemberRow[] | null) ?? []).map((m) => (
             <li key={m.user_id}>
-              {m.profile?.email ?? m.user_id} {m.role === "owner" && <span className="text-ink-faint">(owner)</span>}
+              {m.profile?.display_name ? (
+                <>
+                  <span className="text-ink">{m.profile.display_name}</span>{" "}
+                  <span className="text-ink-faint">{m.profile.email}</span>
+                </>
+              ) : (
+                (m.profile?.email ?? m.user_id)
+              )}{" "}
+              {m.role === "owner" && <span className="text-ink-faint">(owner)</span>}
             </li>
           ))}
           {(invites ?? []).map((i) => (

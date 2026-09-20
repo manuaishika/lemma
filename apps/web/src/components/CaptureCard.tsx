@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Capture } from "@lemma/shared";
 import { CaptureImage } from "./CaptureImage";
+import { ReferenceLayers } from "./ReferenceLayers";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -23,7 +24,16 @@ function hostname(url: string): string {
  * scaffolding: small, muted, below. Rendering branches on capture_type but
  * the note-vs-explanation treatment is the same for every kind.
  */
-export function CaptureCard({ capture, href }: { capture: Capture; href?: string }) {
+export function CaptureCard({
+  capture,
+  href,
+  sharedBy,
+}: {
+  capture: Capture;
+  href?: string;
+  /** Set inside a space: who added this capture. */
+  sharedBy?: string;
+}) {
   const title = (
     <span className="font-serif text-2xl text-ink">
       {capture.capture_type === "screenshot"
@@ -52,6 +62,8 @@ export function CaptureCard({ capture, href }: { capture: Capture; href?: string
         <time className="shrink-0 text-xs text-ink-faint">{formatDate(capture.created_at)}</time>
       </div>
 
+      {sharedBy && <p className="mt-1 text-xs text-accent">Shared by {sharedBy}</p>}
+
       {capture.capture_type === "link" && capture.link_url && (
         <a
           href={capture.link_url}
@@ -65,15 +77,20 @@ export function CaptureCard({ capture, href }: { capture: Capture; href?: string
 
       {capture.capture_type === "screenshot" && <CaptureImage id={capture.id} alt={capture.text || "Screenshot"} />}
 
-      {capture.user_note ? (
+      <ReferenceLayers
+        compact
+        c={{
+          dictionary_definition: capture.dictionary_definition,
+          encyclopedic_summary: null,
+          explanation: capture.explanation,
+        }}
+      />
+
+      {capture.user_note && (
         <p className="note-artifact mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">
           {capture.user_note}
         </p>
-      ) : (
-        <p className="mt-4 text-sm italic text-ink-faint">No understanding written yet.</p>
       )}
-
-      {capture.explanation && <p className="explanation-scaffold mt-4">{capture.explanation}</p>}
 
       {capture.sentence && (
         <p className="mt-3 text-sm text-ink-faint">

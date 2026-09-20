@@ -4,21 +4,33 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useGoogleEnabled } from "@/lib/useGoogleEnabled";
 import { PENDING_ONBOARDING_KEY } from "@/components/PendingCaptureSync";
+import { CaptureDemo, DEMO_KINDS, type DemoKind } from "@/components/CaptureDemo";
+import { SpacesDemo } from "@/components/SpacesDemo";
+import { ErrorNote, Field, GoogleButton, SubmitButton, Divider, friendlyError } from "@/components/AuthKit";
 
 const WORD = "arbitrage";
 const SENTENCE =
   "The traders spotted the same stock priced differently on two exchanges and locked in a risk-free profit through arbitrage before the gap closed.";
-const EXPLANATION =
-  "Here it means buying something where it's cheap and selling it where it's dear at the same moment, so the price gap turns into profit. It only lasts until other traders close the gap.";
 const DEFINITION =
-  "The simultaneous buying and selling of assets in different markets to profit from a difference in price.";
+  "(noun) the simultaneous buying and selling of assets in different markets to profit from a difference in price.";
+const WIKI =
+  "Arbitrage is the practice of taking advantage of a price difference between two or more markets, striking a combination of matching deals to capture the imbalance as profit.";
+const CONTEXT =
+  "Here it means the traders bought on the cheaper exchange and sold on the dearer one at the same moment, so the gap turned into risk-free profit. It only lasts until others close the gap.";
 const EXAMPLE_NOTE =
   "Making money from a price gap before anyone else notices it, like flipping a concert ticket the second it's cheaper somewhere else.";
 
 const GRADES = ["Again", "Hard", "Good", "Easy"] as const;
-const LAST = 6;
+const LAST = 7;
+
+const KIND_BLURB: Record<DemoKind, string> = {
+  word: "Highlight a word, right-click, save.",
+  passage: "Highlight any passage, right-click, save.",
+  screenshot: "Right-click, drag a box around a formula or chart.",
+  link: "Right-click a link and save it.",
+  page: "Right-click anywhere on a page to save the whole thing.",
+};
 
 function Rail({ step }: { step: number }) {
   return (
@@ -32,50 +44,60 @@ function Rail({ step }: { step: number }) {
   );
 }
 
+function ChartCard() {
+  return (
+    <svg viewBox="0 0 220 96" width="100%" height="100%" role="img" aria-label="Two price lines diverging, then meeting">
+      <rect width="220" height="96" fill="var(--paper-warm)" />
+      <path d="M8 60 C50 58 70 56 100 44 S160 40 212 50" fill="none" stroke="var(--blue)" strokeWidth="2.5" />
+      <path d="M8 62 C50 64 70 72 100 76 S160 60 212 52" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 const primaryBtn =
   "press w-full rounded-xl bg-accent px-5 py-3.5 text-[15px] font-medium text-paper-raised hover:bg-accent-soft";
+const secondaryBtn =
+  "press w-full rounded-xl border border-line bg-paper-raised px-5 py-3.5 text-[15px] font-medium text-ink";
 const textBtn = "text-sm text-ink-soft underline underline-offset-4 hover:text-ink";
 
 export function Onboarding() {
   const router = useRouter();
-  const googleEnabled = useGoogleEnabled();
-
   const [step, setStep] = useState(0);
 
-  // screen 2
-  const [tapped, setTapped] = useState(false);
-  const [explained, setExplained] = useState(false);
-  // screen 3
+  const [kind, setKind] = useState<DemoKind>("word");
   const [note, setNote] = useState("");
   const [typing, setTyping] = useState(false);
   const typer = useRef<ReturnType<typeof setInterval> | null>(null);
-  // screen 4
   const [flipped, setFlipped] = useState(false);
   const [gone, setGone] = useState(false);
-  // screen 5
-  const [sent, setSent] = useState(false);
-  // screen 6
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
 
-  useEffect(() => () => {
-    if (typer.current) clearInterval(typer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (typer.current) clearInterval(typer.current);
+    },
+    [],
+  );
 
-  function tapWord() {
-    if (tapped) return;
-    setTapped(true);
-    setTimeout(() => setExplained(true), 1200);
+  function goTo(n: number) {
+    setFlipped(false);
+    setGone(false);
+    setError(null);
+    setStep(n);
   }
 
   function typeExample() {
     if (typing) return;
     setTyping(true);
     setNote("");
-    // Derive progress from elapsed time so a throttled timer can't stretch the animation.
+    // Progress comes from elapsed time so a throttled timer can't stretch the animation.
     const start = performance.now();
     typer.current = setInterval(() => {
       const i = Math.min(EXAMPLE_NOTE.length, Math.floor((performance.now() - start) / 22));
@@ -90,7 +112,7 @@ export function Onboarding() {
   function grade() {
     if (!flipped || gone) return;
     setGone(true);
-    setTimeout(() => setStep(4), 650);
+    setTimeout(() => goTo(5), 650);
   }
 
   /** Park the sample capture so the app can save it once they're signed in. */
@@ -102,10 +124,11 @@ export function Onboarding() {
           text: WORD,
           capture_type: "term",
           sentence: SENTENCE,
-          page_title: "Lemma — your first capture",
-          explanation: EXPLANATION,
+          page_title: "Lemma: your first capture",
           dictionary_definition: DEFINITION,
-          user_note: note.trim(),
+          encyclopedic_summary: WIKI,
+          explanation: CONTEXT,
+          user_note: note.trim() || null,
         }),
       );
     } catch {
@@ -115,33 +138,58 @@ export function Onboarding() {
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    if (password !== confirm) return setError("Those passwords don't match.");
+    if (password.length < 6) return setError("Use a password of at least 6 characters.");
+    setBusy(true);
     persistCapture();
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    setBusy(false);
-    if (error) return setError(error.message);
-    if (!data.session) return setCheckEmail(true); // "Confirm email" is on
-    setStep(6);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/app`,
+        },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        setCheckEmail(true); // "Confirm email" is on in Supabase
+      } else {
+        goTo(7);
+      }
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function google() {
-    setError(null);
-    persistCapture();
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/app` },
-    });
-    if (error) setError(error.message);
-  }
+  const firstName = name.trim().split(/\s+/)[0];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[440px] flex-col px-6 pb-10 pt-8">
+    <main className="mx-auto flex min-h-screen max-w-[440px] flex-col px-6 pb-10 pt-6">
+      <div className="flex h-9 items-center justify-between text-sm">
+        {step > 0 && step < LAST ? (
+          <button type="button" onClick={() => goTo(step - 1)} className="text-ink-soft hover:text-ink">
+            &larr; Back
+          </button>
+        ) : (
+          <Link href="/" className="font-serif text-lg italic text-ink">
+            Lemma
+          </Link>
+        )}
+        {step < LAST && (
+          <Link href="/signup" className="text-ink-faint underline underline-offset-4 hover:text-ink">
+            Skip setup
+          </Link>
+        )}
+      </div>
       <Rail step={step} />
 
-      <div key={step} className="ob-screen flex flex-1 flex-col justify-center gap-6 py-8">
+      <div key={step} className="ob-screen flex flex-1 flex-col justify-center gap-5 py-6">
+        {/* 0 — welcome */}
         {step === 0 && (
           <>
             <p className="font-serif text-5xl italic text-ink">Lemma</p>
@@ -151,62 +199,80 @@ export function Onboarding() {
               Then it sits in a folder, and you forget it.
             </p>
             <p className="text-[15px] text-ink-soft">
-              Lemma asks you to say why it mattered, then brings it back until it sticks.
+              Lemma keeps the meaning, asks why it mattered to you, and brings it back until it sticks.
             </p>
             <div className="flex flex-col items-center gap-4 pt-2">
-              <button className={primaryBtn} onClick={() => setStep(1)}>
+              <button className={primaryBtn} onClick={() => goTo(1)}>
                 Show me how
               </button>
               <Link href="/login" className={textBtn}>
-                I&apos;ve used Lemma before
+                I already have an account
               </Link>
             </div>
           </>
         )}
 
+        {/* 1 — how capture actually works */}
         {step === 1 && (
           <>
-            <p className="text-xs uppercase tracking-wide text-ink-faint">1 · Capture</p>
-            <p className="font-serif text-[22px] leading-relaxed text-ink">
-              The traders spotted the same stock priced differently on two exchanges and locked in a
-              risk-free profit through{" "}
-              <button type="button" className={`ob-word ${tapped ? "on" : ""}`} onClick={tapWord}>
-                {WORD}
-              </button>{" "}
-              before the gap closed.
-            </p>
-            <div className={`ob-panel ${tapped ? "open" : ""}`}>
-              <div>
-                <p className="mb-2 text-xs uppercase tracking-wide text-ink-faint">How it&apos;s used here</p>
-                {explained ? (
-                  <p className="explanation-scaffold">{EXPLANATION}</p>
-                ) : (
-                  <div className="space-y-2.5 pt-1" aria-label="Loading">
-                    <div className="ob-shimmer" />
-                    <div className="ob-shimmer" style={{ width: "92%" }} />
-                    <div className="ob-shimmer" style={{ width: "64%" }} />
-                  </div>
-                )}
-              </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-ink-faint">1 · Capture</p>
+              <h2 className="mt-1 font-serif text-2xl text-ink">Save anything with a right-click.</h2>
             </div>
-            {!tapped && <p className="text-sm text-ink-faint">Tap the underlined word.</p>}
-            <button className={primaryBtn} disabled={!tapped} onClick={() => setStep(2)}>
+            <CaptureDemo key={kind} kind={kind} />
+            <div>
+              <div className="demo-chips" role="group" aria-label="What are you saving?">
+                {DEMO_KINDS.map((k) => (
+                  <button key={k.id} type="button" className="demo-chip" aria-pressed={kind === k.id} onClick={() => setKind(k.id)}>
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-ink-soft">{KIND_BLURB[kind]}</p>
+            </div>
+            <button className={primaryBtn} onClick={() => goTo(2)}>
               Next
             </button>
           </>
         )}
 
+        {/* 2 — what you get back */}
         {step === 2 && (
           <>
-            <p className="text-xs uppercase tracking-wide text-ink-faint">2 · Your note</p>
-            <div className="rounded-xl bg-paper-warm px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-ink-ghost">Dictionary</p>
-              <p className="mt-1 text-sm text-ink-faint">{DEFINITION}</p>
-            </div>
             <div>
-              <h2 className="font-serif text-2xl text-ink">The definition isn&apos;t the point.</h2>
+              <p className="text-xs uppercase tracking-wide text-ink-faint">2 · What you get back</p>
+              <h2 className="mt-1 font-serif text-2xl text-ink">The meaning, before you even ask.</h2>
+            </div>
+            <div className="rounded-2xl border border-line bg-paper-raised p-5 shadow-sm">
+              <p className="font-serif text-3xl text-ink">{WORD}</p>
+              <section className="mt-4">
+                <h3 className="text-xs uppercase tracking-wide text-ink-faint">Definition</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-ink">{DEFINITION}</p>
+              </section>
+              <section className="mt-4">
+                <h3 className="text-xs uppercase tracking-wide text-ink-faint">From Wikipedia</h3>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{WIKI}</p>
+              </section>
+              <section className="mt-4">
+                <h3 className="text-xs uppercase tracking-wide text-ink-faint">How it&rsquo;s used here</h3>
+                <p className="explanation-scaffold mt-1">{CONTEXT}</p>
+              </section>
+            </div>
+            <p className="text-sm text-ink-faint">Screenshots and links skip the lookup and go straight to your note.</p>
+            <button className={primaryBtn} onClick={() => goTo(3)}>
+              Next
+            </button>
+          </>
+        )}
+
+        {/* 3 — your note (skippable) */}
+        {step === 3 && (
+          <>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-ink-faint">3 · Your note</p>
+              <h2 className="mt-1 font-serif text-2xl text-ink">Why did it matter to you?</h2>
               <p className="mt-1 text-[15px] text-ink-soft">
-                Write why <em>{WORD}</em> mattered to you.
+                This is the part Lemma tests you on. Skip it now and add one later if you&rsquo;d rather.
               </p>
             </div>
             <div>
@@ -223,18 +289,32 @@ export function Onboarding() {
                 Type an example for me
               </button>
             </div>
-            <button className={primaryBtn} disabled={!note.trim() || typing} onClick={() => setStep(3)}>
-              Next
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button className={primaryBtn} disabled={!note.trim() || typing} onClick={() => goTo(4)}>
+                Save it
+              </button>
+              <button
+                className={secondaryBtn}
+                disabled={typing}
+                onClick={() => {
+                  setNote("");
+                  goTo(4);
+                }}
+              >
+                Skip for now
+              </button>
+            </div>
           </>
         )}
 
-        {step === 3 && (
+        {/* 4 — it comes back (a screenshot card, to show review covers everything) */}
+        {step === 4 && (
           <>
-            <p className="text-xs uppercase tracking-wide text-ink-faint">3 · It comes back</p>
-            <p className="text-[15px] text-ink-soft">
-              A few days later, Lemma shows you the word. Tap to see what you wrote.
-            </p>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-ink-faint">4 · It comes back</p>
+              <h2 className="mt-1 font-serif text-2xl text-ink">Every capture returns, not just words.</h2>
+              <p className="mt-1 text-[15px] text-ink-soft">Here&rsquo;s a screenshot you saved. Tap it to see what you wrote.</p>
+            </div>
             <div className={`ob-stack ${gone ? "launched" : ""}`}>
               <div className="ob-card l2" aria-hidden />
               <div className="ob-card l1" aria-hidden />
@@ -248,12 +328,27 @@ export function Onboarding() {
               >
                 <div className={`ob-flip ${flipped ? "flipped" : ""}`}>
                   <div className="ob-face">
-                    <p className="font-serif text-4xl text-ink">{WORD}</p>
-                    <p className="mt-3 text-sm text-ink-faint">Tap to flip</p>
+                    <div className="h-28 overflow-hidden rounded-lg border border-line">
+                      <ChartCard />
+                    </div>
+                    <p className="mt-3 text-xs uppercase tracking-wide text-ink-faint">Screenshot</p>
+                    <p className="text-sm text-ink-faint">Tap to flip</p>
                   </div>
                   <div className="ob-face back">
-                    <p className="text-xs uppercase tracking-wide text-ink-faint">You wrote</p>
-                    <p className="note-artifact mt-3 font-serif text-lg leading-relaxed">{note}</p>
+                    {note ? (
+                      <>
+                        <p className="text-xs uppercase tracking-wide text-ink-faint">You wrote</p>
+                        <p className="note-artifact mt-3 font-serif text-lg leading-relaxed">{note}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs uppercase tracking-wide text-ink-faint">No note yet</p>
+                        <p className="mt-2 text-sm text-ink-soft">
+                          You skipped it, so Lemma shows the meaning instead. You can add a note any time.
+                        </p>
+                        <p className="mt-3 text-sm text-ink">{DEFINITION}</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -273,43 +368,26 @@ export function Onboarding() {
           </>
         )}
 
-        {step === 4 && (
+        {/* 5 — spaces, shown properly */}
+        {step === 5 && (
           <>
-            <p className="text-xs uppercase tracking-wide text-ink-faint">4 · Spaces</p>
-            <h2 className="font-serif text-2xl text-ink">Share it with someone.</h2>
-            <p className="text-[15px] text-ink-soft">
-              Make a space, invite a friend by email, and whatever either of you saves shows up for both.
-            </p>
-            <div className={`ob-space ${sent ? "sent" : ""}`}>
-              <div className="flex items-center gap-2 py-4">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="ob-node near">You</div>
-                </div>
-                <div className="ob-wire">
-                  <i />
-                  <span className="ob-fly" />
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <div className="ob-node far">A</div>
-                </div>
-              </div>
-              <p className="min-h-6 text-center text-sm text-accent" aria-live="polite">
-                {sent ? `Landed, with your note attached.` : ""}
+            <div>
+              <p className="text-xs uppercase tracking-wide text-ink-faint">5 · Spaces</p>
+              <h2 className="mt-1 font-serif text-2xl text-ink">Share anything, not just words.</h2>
+              <p className="mt-1 text-[15px] text-ink-soft">
+                Make a space, invite someone by email, then pick that space when you save (or move a capture into it
+                later).
               </p>
             </div>
-            {!sent ? (
-              <button className={primaryBtn} onClick={() => setSent(true)}>
-                Try sending it
-              </button>
-            ) : (
-              <button className={primaryBtn} onClick={() => setStep(5)}>
-                Continue
-              </button>
-            )}
+            <SpacesDemo />
+            <button className={primaryBtn} onClick={() => goTo(6)}>
+              Continue
+            </button>
           </>
         )}
 
-        {step === 5 && (
+        {/* 6 — create account */}
+        {step === 6 && (
           <>
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-accent-light px-3.5 py-1.5 text-sm text-ink">
               <span className="h-2 w-2 rounded-full bg-accent" />
@@ -323,8 +401,8 @@ export function Onboarding() {
             </div>
             {checkEmail ? (
               <div className="rounded-xl border border-line bg-paper-raised p-4 text-sm text-ink-soft">
-                We sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it,
-                then sign in. Your note is saved on this device and will be added to your vault.
+                We sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it, then
+                sign in. Your first capture is saved on this device and will be added to your vault.
                 <div className="mt-3">
                   <Link href="/login" className={textBtn}>
                     Go to sign in
@@ -333,44 +411,17 @@ export function Onboarding() {
               </div>
             ) : (
               <>
-                {googleEnabled && (
-                  <>
-                    <button type="button" onClick={google} className="press w-full rounded-xl border border-line bg-paper-raised py-3 text-sm font-medium text-ink">
-                      Continue with Google
-                    </button>
-                    <div className="flex items-center gap-3 text-xs text-ink-faint">
-                      <span className="h-px flex-1 bg-line" />
-                      or
-                      <span className="h-px flex-1 bg-line" />
-                    </div>
-                  </>
-                )}
-                <form onSubmit={signUp} className="space-y-3">
-                  <input
-                    id="ob-email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-line bg-paper-raised px-4 py-3 text-[15px] outline-none focus:border-accent"
-                  />
-                  <input
-                    id="ob-password"
-                    type="password"
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                    placeholder="Password (6+ characters)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-line bg-paper-raised px-4 py-3 text-[15px] outline-none focus:border-accent"
-                  />
-                  {error && <p className="text-sm text-red">{error}</p>}
-                  <button type="submit" disabled={busy} className={primaryBtn}>
-                    {busy ? "Creating…" : "Create my vault"}
-                  </button>
+                <GoogleButton label="Sign up with Google" onError={setError} beforeRedirect={persistCapture} />
+                <Divider />
+                <form onSubmit={signUp} className="space-y-3.5">
+                  <Field id="ob-name" label="Your name" type="text" required autoComplete="name" placeholder="Aishika" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Field id="ob-email" label="Email" type="email" required autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Field id="ob-password" label="Password" type="password" required minLength={6} autoComplete="new-password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Field id="ob-confirm" label="Confirm password" type="password" required autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                  <ErrorNote message={error} />
+                  <SubmitButton busy={busy} busyLabel="Creating your vault…">
+                    Create my vault
+                  </SubmitButton>
                 </form>
                 <p className="text-center text-sm text-ink-faint">
                   Already have an account?{" "}
@@ -383,19 +434,20 @@ export function Onboarding() {
           </>
         )}
 
-        {step === 6 && (
+        {/* 7 — done */}
+        {step === 7 && (
           <>
             <svg className="ob-check" width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden>
               <circle cx="32" cy="32" r="30" fill="var(--accent)" />
               <path d="M19 33l9 9 17-19" stroke="var(--surface)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <h2 className="font-serif text-3xl text-ink">Your vault is ready.</h2>
+            <h2 className="font-serif text-3xl text-ink">{firstName ? `Welcome, ${firstName}.` : "Your vault is ready."}</h2>
             <ul className="divide-y divide-line border-y border-line text-[15px]">
               {[
-                ["Capture", "Right-click a word, a screenshot or a link."],
-                ["Your note", "Write why it mattered. That's the part you keep."],
+                ["Capture", "Right-click a word, passage, screenshot, link or page."],
+                ["Meaning", "Definition first, then how it's used, then your note."],
                 ["It comes back", "Again, Hard, Good or Easy sets when you see it next."],
-                ["Spaces", "Share a folder with a friend by email."],
+                ["Spaces", "Share any capture with someone by email."],
               ].map(([k, v]) => (
                 <li key={k} className="flex gap-4 py-3">
                   <span className="w-28 shrink-0 font-serif italic text-ink-faint">{k}</span>

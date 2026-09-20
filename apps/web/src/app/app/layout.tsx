@@ -15,6 +15,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
 
   const { data: spaces } = await supabase.from("spaces").select("*").order("name");
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
+  const name = profile?.display_name || (user.email ? user.email.split("@")[0] : "");
 
   return (
     <div className="min-h-screen">
@@ -34,7 +40,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <SpaceSwitcher spaces={(spaces as Space[]) ?? []} />
             </Suspense>
           </nav>
-          <SignOutButton />
+          <div className="flex items-center gap-4">
+            {name && <span className="hidden text-sm text-ink-soft sm:inline">Hi, {name}</span>}
+            <SignOutButton />
+          </div>
         </div>
       </header>
       <PendingCaptureSync />

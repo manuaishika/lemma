@@ -53,7 +53,6 @@ export async function POST(req: Request) {
 
   if (!text && capture_type !== "screenshot") return badRequest("text is required");
   if (capture_type === "screenshot" && !body.image_path) return badRequest("image_path is required");
-  if (!body.user_note?.trim()) return badRequest("A note is required — write why this mattered to you.");
   if (capture_type === "link" && !body.link_url) return badRequest("link_url is required");
 
   const { data, error } = await ctx.supabase
@@ -69,7 +68,8 @@ export async function POST(req: Request) {
       image_path: body.image_path ?? null,
       explanation: body.explanation ?? null,
       dictionary_definition: body.dictionary_definition ?? null,
-      user_note: body.user_note ?? null,
+      encyclopedic_summary: body.encyclopedic_summary ?? null,
+      user_note: body.user_note?.trim() || null,
       space_id: body.space_id ?? null,
     })
     .select("*")

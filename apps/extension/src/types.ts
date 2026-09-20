@@ -19,6 +19,8 @@ export interface LinkCapture {
   linkUrl: string;
   pageTitle: string;
   url: string;
+  /** True when the whole page is being saved (right-click page), not a link on it. */
+  isPage?: boolean;
 }
 
 export type PendingCapture = SelectionCapture | ScreenshotCapture | LinkCapture;

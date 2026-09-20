@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GRADE_LABELS, GRADES, previewIntervals, type DueCard, type Grade } from "@lemma/shared";
 import { CaptureImage } from "./CaptureImage";
+import { ReferenceLayers } from "./ReferenceLayers";
 
 function humanInterval(days: number): string {
   if (days <= 1) return "1d";
@@ -100,14 +101,18 @@ export function ReviewSession({ initial }: { initial: DueCard[] }) {
         </button>
       ) : (
         <div className="mx-auto mt-8 max-w-md">
+          <ReferenceLayers c={c} />
           {c.user_note ? (
-            <p className="note-artifact whitespace-pre-wrap text-[15px] leading-relaxed">
+            <p className="note-artifact mt-6 whitespace-pre-wrap text-[15px] leading-relaxed">
               {c.user_note}
             </p>
           ) : (
-            <p className="text-sm italic text-ink-faint">No note was written for this capture.</p>
+            !c.dictionary_definition &&
+            !c.encyclopedic_summary &&
+            !c.explanation && (
+              <p className="text-sm italic text-ink-faint">Nothing else was saved with this capture.</p>
+            )
           )}
-          {c.explanation && <p className="explanation-scaffold mt-4">{c.explanation}</p>}
 
           <div className="mt-8 grid grid-cols-4 gap-2">
             {GRADES.map((g) => (

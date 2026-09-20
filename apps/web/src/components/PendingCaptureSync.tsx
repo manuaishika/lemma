@@ -32,13 +32,12 @@ export function PendingCaptureSync() {
       body: raw,
     })
       .then((res) => {
-        // Keep it on network/server errors so a later visit retries; drop it
-        // on success or if the API says the payload itself is bad.
-        if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 401)) {
+        // Only clear it once it's really saved; any failure leaves it for the next visit.
+        if (res.ok) {
           try {
             localStorage.removeItem(PENDING_ONBOARDING_KEY);
           } catch {}
-          if (res.ok) router.refresh();
+          router.refresh();
         }
       })
       .catch(() => {});

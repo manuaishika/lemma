@@ -4,6 +4,25 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+/** Drop the launch video's URL here (mp4/webm). Until then a placeholder holds the space. */
+const VIDEO_URL: string | null = null;
+
+function VideoSlot() {
+  if (VIDEO_URL) {
+    return <video className="aspect-video w-full rounded-2xl bg-ink" src={VIDEO_URL} controls playsInline />;
+  }
+  return (
+    <div className="relative flex aspect-video w-full items-center justify-center rounded-2xl border border-line bg-paper-warm">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-paper-raised shadow-md">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+          <path d="M6 3.5v13l11-6.5z" fill="currentColor" />
+        </svg>
+      </span>
+      <span className="absolute bottom-3 left-4 text-sm text-ink-faint">See it in action (40s), coming soon</span>
+    </div>
+  );
+}
+
 function Step({ n, title, body }: { n: string; title: string; body: string }) {
   return (
     <div className="flex gap-4">
@@ -37,16 +56,26 @@ export default async function Home() {
         browser tabs.
       </p>
 
-      <div className="mt-8 flex items-center gap-4">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link
-          href="/welcome"
-          className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft"
+          href="/signup"
+          className="press rounded-xl bg-accent px-5 py-3 text-sm font-medium text-paper-raised hover:bg-accent-soft"
         >
-          Try it, no account needed
+          Create an account
         </Link>
-        <Link href="/login" className="text-sm text-ink-soft underline underline-offset-4">
+        <Link
+          href="/login"
+          className="press rounded-xl border border-line bg-paper-raised px-5 py-3 text-sm font-medium text-ink"
+        >
           Sign in
         </Link>
+        <Link href="/welcome" className="px-2 text-sm text-ink-soft underline underline-offset-4">
+          See how it works
+        </Link>
+      </div>
+
+      <div className="mt-12 max-w-xl">
+        <VideoSlot />
       </div>
 
       <section className="mt-20 space-y-8 border-t border-line pt-10">

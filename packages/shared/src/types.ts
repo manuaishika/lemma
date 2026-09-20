@@ -33,8 +33,10 @@ export interface Capture {
   image_path: string | null;
   /** Context-aware explanation from Claude. Recessive scaffolding, not the artifact. */
   explanation: string | null;
-  /** Generic dictionary gloss, kept as a fallback reference. */
+  /** Objective dictionary definition (dictionaryapi.dev). Shown first. */
   dictionary_definition: string | null;
+  /** Wikipedia summary — catches concepts, theories and proper nouns dictionaries miss. */
+  encyclopedic_summary: string | null;
   /** The user's own understanding. This is the artifact. */
   user_note: string | null;
   /** null = personal vault; set = lives in a shared space. */
@@ -101,6 +103,7 @@ export interface CreateCaptureInput {
   image_path?: string | null;
   explanation?: string | null;
   dictionary_definition?: string | null;
+  encyclopedic_summary?: string | null;
   user_note?: string | null;
   space_id?: string | null;
 }
@@ -110,6 +113,9 @@ export interface UpdateCaptureInput {
   capture_type?: CaptureType;
   explanation?: string | null;
   dictionary_definition?: string | null;
+  encyclopedic_summary?: string | null;
+  /** Move into a shared space, or null for your personal vault. */
+  space_id?: string | null;
 }
 
 export interface CreateSpaceInput {
@@ -128,8 +134,12 @@ export interface ExplainInput {
 }
 
 export interface ExplainResult {
+  /** How it's used in THIS passage (Claude). Shown after the definitions. */
   explanation: string | null;
+  /** Objective dictionary definition. */
   dictionary_definition: string | null;
+  /** Wikipedia summary, when the term has an article. */
+  encyclopedic_summary: string | null;
 }
 
 export interface ReviewInput {

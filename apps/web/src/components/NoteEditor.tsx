@@ -27,18 +27,18 @@ export function NoteEditor({ capture }: { capture: Capture }) {
 
   return (
     <div className="mt-4">
-      <label className="text-xs uppercase tracking-wide text-ink-faint">Your understanding</label>
+      <label className="text-xs uppercase tracking-wide text-ink-faint">Your note <span className="normal-case tracking-normal">(optional)</span></label>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={5}
-        placeholder="In your own words…"
+        placeholder="Why did this matter to you?"
         className="note-artifact mt-2 w-full resize-y rounded-r-md border border-line bg-paper-raised px-3 py-2 text-[15px] leading-relaxed outline-none focus:border-accent"
       />
       <div className="mt-2 flex items-center gap-3">
         <button
           onClick={save}
-          disabled={status === "saving" || !note.trim() || note === (capture.user_note ?? "")}
+          disabled={status === "saving" || note === (capture.user_note ?? "")}
           className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-paper-raised transition hover:bg-accent-soft disabled:opacity-50"
         >
           {status === "saving" ? "Saving…" : "Save note"}

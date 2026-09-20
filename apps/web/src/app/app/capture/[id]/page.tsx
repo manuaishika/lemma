@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Capture, SrsCard } from "@lemma/shared";
+import type { Capture, Space, SrsCard } from "@lemma/shared";
 import { createClient } from "@/lib/supabase/server";
 import { CaptureImage } from "@/components/CaptureImage";
 import { NoteEditor } from "@/components/NoteEditor";
+import { ReferenceLayers } from "@/components/ReferenceLayers";
+import { SpacePicker } from "@/components/SpacePicker";
 import { DeleteCaptureButton } from "@/components/DeleteCaptureButton";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +17,8 @@ export default async function CapturePage({ params }: { params: Promise<{ id: st
   const { data: capture } = await supabase.from("captures").select("*").eq("id", id).single();
   if (!capture) notFound();
   const c = capture as Capture;
+
+  const { data: spaces } = await supabase.from("spaces").select("*").order("name");
 
   const { data: card } = await supabase
     .from("srs_cards")
@@ -58,23 +62,11 @@ export default async function CapturePage({ params }: { params: Promise<{ id: st
         </p>
       )}
 
+      <ReferenceLayers c={c} />
+
       <NoteEditor capture={c} />
 
-      {c.explanation && (
-        <section className="mt-8">
-          <h2 className="text-xs uppercase tracking-wide text-ink-faint">
-            How it&rsquo;s used here
-          </h2>
-          <p className="explanation-scaffold mt-2">{c.explanation}</p>
-        </section>
-      )}
-
-      {c.dictionary_definition && (
-        <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-wide text-ink-faint">Dictionary</h2>
-          <p className="mt-2 text-sm text-ink-faint">{c.dictionary_definition}</p>
-        </section>
-      )}
+      <SpacePicker captureId={c.id} current={c.space_id} spaces={(spaces as Space[]) ?? []} />
 
       <section className="mt-10 flex items-center justify-between border-t border-line pt-4 text-sm text-ink-faint">
         <span>

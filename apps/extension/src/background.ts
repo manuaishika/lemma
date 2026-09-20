@@ -5,6 +5,7 @@ import type { RegionMessage } from "./region.js";
 const MENU_SELECTION = "lemma-save";
 const MENU_SCREENSHOT = "lemma-save-screenshot";
 const MENU_LINK = "lemma-save-link";
+const MENU_PAGE = "lemma-save-page";
 const PENDING_KEY = "lemma_pending_capture";
 
 function createMenus() {
@@ -17,6 +18,11 @@ function createMenus() {
     chrome.contextMenus.create({
       id: MENU_SCREENSHOT,
       title: "Save screenshot to Lemma (select area)",
+      contexts: ["page"],
+    });
+    chrome.contextMenus.create({
+      id: MENU_PAGE,
+      title: "Save this page to Lemma",
       contexts: ["page"],
     });
     chrome.contextMenus.create({
@@ -134,9 +140,10 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   }
 });
 
-async function openPopupWithLink(linkUrl: string, tab: chrome.tabs.Tab | undefined) {
+async function openPopupWithLink(linkUrl: string, tab: chrome.tabs.Tab | undefined, isPage = false) {
   await openPopupWithCapture({
     kind: "link",
+    isPage,
     linkUrl,
     pageTitle: tab?.title ?? "",
     url: tab?.url ?? "",
@@ -155,6 +162,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void openPopupWithSelection(tab, info.selectionText.trim());
   } else if (info.menuItemId === MENU_SCREENSHOT) {
     void startScreenshot(tab);
+  } else if (info.menuItemId === MENU_PAGE && tab?.url) {
+    void openPopupWithLink(tab.url, tab, true);
   } else if (info.menuItemId === MENU_LINK && info.linkUrl) {
     void openPopupWithLink(info.linkUrl, tab);
   }

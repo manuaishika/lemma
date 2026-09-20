@@ -54,7 +54,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       .single();
     if (inviteErr) return badRequest(inviteErr.message);
 
-    const emailed = await sendInviteEmail(email, space?.name ?? "a space", ctx.user.email ?? "A friend");
+    const { data: me } = await ctx.supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", ctx.user.id)
+      .single();
+    const inviter = me?.display_name || ctx.user.email || "A friend";
+    const emailed = await sendInviteEmail(email, space?.name ?? "a space", inviter);
     return NextResponse.json({ invite, pending: true, emailed }, { status: 201, headers: CORS_HEADERS });
   }
 

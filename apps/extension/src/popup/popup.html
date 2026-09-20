@@ -57,7 +57,16 @@
         outline: none;
       }
       textarea.note:focus { border-color: var(--accent); }
-      .explanation { font-size: 12.5px; line-height: 1.6; color: var(--ink-faint); margin: 12px 0 4px; }
+      .ref-block { margin: 10px 0 0; }
+      .ref-block .field-label { margin-bottom: 2px; }
+      .ref-block p { margin: 0; }
+      .ref-def { font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+      .ref-wiki { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); }
+      .explanation { font-size: 12.5px; line-height: 1.6; color: var(--ink-faint); }
+      .opt { text-transform: none; letter-spacing: 0; }
+      .space-select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; font: 13px system-ui, sans-serif; color: var(--ink); }
+      #note { margin-top: 0; }
+      #ref + label { margin-top: 14px; }
       details.dict { font-size: 12.5px; color: var(--ink-faint); margin-top: 6px; }
       details.dict summary { cursor: pointer; }
       .row { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
@@ -130,14 +139,26 @@
         <div class="sentence" id="sentence"></div>
         <div class="sentence" id="linkUrlDisplay" hidden></div>
 
-        <label class="field-label" for="note">Your understanding</label>
+        <div id="ref" hidden>
+          <div class="ref-block" id="def-block" hidden>
+            <div class="field-label">Definition</div>
+            <p class="ref-def" id="def-text"></p>
+          </div>
+          <div class="ref-block" id="wiki-block" hidden>
+            <div class="field-label">From Wikipedia</div>
+            <p class="ref-wiki" id="wiki-text"></p>
+          </div>
+          <div class="ref-block">
+            <div class="field-label">How it&rsquo;s used here</div>
+            <p class="explanation" id="explanation">Looking up…</p>
+          </div>
+        </div>
+
+        <label class="field-label" for="note">Your note <span class="opt">(optional)</span></label>
         <textarea class="note" id="note" placeholder="Why did this matter to you?"></textarea>
 
-        <div class="explanation" id="explanation">Looking up how it&rsquo;s used here…</div>
-        <details class="dict" id="dict" hidden>
-          <summary>Dictionary</summary>
-          <p id="dict-text"></p>
-        </details>
+        <label class="field-label" for="space" style="margin-top: 12px">Save to</label>
+        <select id="space" class="space-select"><option value="">My vault</option></select>
 
         <div class="row">
           <button class="primary" id="save-btn">Save</button>

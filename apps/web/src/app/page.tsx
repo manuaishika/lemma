@@ -163,14 +163,16 @@ export default async function Home() {
 
       <Feature
         eyebrow="Spaces"
-        title="Share anything with anyone."
+        title="Share with a friend, a team or a whole organisation."
         demo={<SpacesDemo />}
       >
         <p>
-          Make a space, invite someone by email, and pick it whenever you save. Words, screenshots, links and whole pages
-          all go in.
+          A space is a shared folder for any group: a study group, a design team, a company. Invite people by email,
+          then pick the space whenever you save. Words, screenshots, links and whole pages all go in.
         </p>
-        <p>They don&rsquo;t need an account yet. The invite waits for them, and everything shows who shared it.</p>
+        <p>
+          Everyone sees who shared what. People don&rsquo;t need an account yet, because the invite waits for them.
+        </p>
       </Feature>
 
       <section className="grid gap-10 border-t border-line py-16 md:grid-cols-2 md:items-center md:gap-14">

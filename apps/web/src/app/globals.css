@@ -376,6 +376,40 @@ button:not(:disabled):active {
 .sd-title { font-weight: 500; color: var(--ink); }
 .sd-by { margin-top: 1px; font-size: 11.5px; color: var(--accent); }
 .sd-rise { animation: ob-rise 0.5s var(--spring) backwards; }
+.sd-members { display: flex; align-items: center; margin-top: 14px; }
+.sd-av {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-left: -7px; border-radius: 50%;
+  border: 2px solid var(--surface); font: 600 12px system-ui, sans-serif;
+  background: color-mix(in srgb, var(--av, var(--accent)) 22%, var(--surface)); color: var(--av, var(--accent));
+  animation: ob-pop 0.45s var(--spring) backwards;
+}
+.sd-av:first-child { margin-left: 0; }
+.sd-more { margin-left: 10px; font: 500 12px system-ui, sans-serif; color: var(--ink-faint); }
+.sd-feed { display: grid; gap: 6px; margin-top: 14px; }
+.sd-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--paper); color: var(--ink-faint);
+  animation: ob-rise 0.45s var(--spring) backwards;
+}
+.sd-grow2 { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.sd-grow2 .sd-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-kind { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); }
+
+/* tabs that play themselves and respond to hover */
+.htabs { display: flex; flex-wrap: wrap; gap: 5px; }
+.htab {
+  position: relative; display: inline-flex; align-items: center; gap: 5px; overflow: hidden;
+  padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink-soft); font: 500 12.5px var(--font-inter), system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+  transition: transform 0.35s var(--spring), border-color 0.25s var(--ease), background-color 0.25s var(--ease),
+    color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.htab:hover { transform: translateY(-2px); border-color: var(--accent); color: var(--ink); box-shadow: var(--shadow-sm); }
+.htab.on { background: var(--accent-light); border-color: var(--accent); color: var(--ink); }
+.htab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.htab-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent); animation: htab-progress var(--cycle, 8s) linear forwards; }
+.htab-bar.hold { animation: none; width: 100%; }
+@keyframes htab-progress { to { width: 100%; } }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

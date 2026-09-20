@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PENDING_ONBOARDING_KEY } from "@/components/PendingCaptureSync";
-import { CaptureDemo, DEMO_KINDS, type DemoKind } from "@/components/CaptureDemo";
+import { CaptureDemoPicker } from "@/components/CaptureDemoPicker";
 import { SpacesDemo } from "@/components/SpacesDemo";
 import { ErrorNote, Field, GoogleButton, SubmitButton, Divider, friendlyError } from "@/components/AuthKit";
 
@@ -23,14 +23,6 @@ const EXAMPLE_NOTE =
 
 const GRADES = ["Again", "Hard", "Good", "Easy"] as const;
 const LAST = 7;
-
-const KIND_BLURB: Record<DemoKind, string> = {
-  word: "Highlight a word, right-click, save.",
-  passage: "Highlight any passage, right-click, save.",
-  screenshot: "Right-click, drag a box around a formula or chart.",
-  link: "Right-click a link and save it.",
-  page: "Right-click anywhere on a page to save the whole thing.",
-};
 
 function Rail({ step }: { step: number }) {
   return (
@@ -64,7 +56,6 @@ export function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
 
-  const [kind, setKind] = useState<DemoKind>("word");
   const [note, setNote] = useState("");
   const [typing, setTyping] = useState(false);
   const typer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -219,17 +210,7 @@ export function Onboarding() {
               <p className="text-xs uppercase tracking-wide text-ink-faint">1 · Capture</p>
               <h2 className="mt-1 font-serif text-2xl text-ink">Save anything with a right-click.</h2>
             </div>
-            <CaptureDemo key={kind} kind={kind} />
-            <div>
-              <div className="demo-chips" role="group" aria-label="What are you saving?">
-                {DEMO_KINDS.map((k) => (
-                  <button key={k.id} type="button" className="demo-chip" aria-pressed={kind === k.id} onClick={() => setKind(k.id)}>
-                    {k.label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-3 text-sm text-ink-soft">{KIND_BLURB[kind]}</p>
-            </div>
+            <CaptureDemoPicker />
             <button className={primaryBtn} onClick={() => goTo(2)}>
               Next
             </button>
@@ -373,10 +354,10 @@ export function Onboarding() {
           <>
             <div>
               <p className="text-xs uppercase tracking-wide text-ink-faint">5 · Spaces</p>
-              <h2 className="mt-1 font-serif text-2xl text-ink">Share anything, not just words.</h2>
+              <h2 className="mt-1 font-serif text-2xl text-ink">Share with a friend, a team or a whole organisation.</h2>
               <p className="mt-1 text-[15px] text-ink-soft">
-                Make a space, invite someone by email, then pick that space when you save (or move a capture into it
-                later).
+                A space is a shared folder for any group. Invite people by email, then pick the space when you save, or
+                move a capture into it later.
               </p>
             </div>
             <SpacesDemo />

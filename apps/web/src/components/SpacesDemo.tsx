@@ -1,35 +1,86 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HoverTabs, TabIcon, useAutoCycle, type TabIconName } from "@/components/HoverTabs";
 
-const SPACE_NAME = "Things worth reading";
-const EMAIL = "r@example.com";
+type Item = { kind: "word" | "screenshot" | "link" | "passage" | "page"; title: string; by: string };
 
-function Chart() {
-  return (
-    <svg viewBox="0 0 220 96" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" aria-hidden>
-      <rect width="220" height="96" fill="var(--paper-warm)" />
-      <path d="M8 60 C50 58 70 56 100 44 S160 40 212 50" fill="none" stroke="var(--blue)" strokeWidth="2.5" />
-      <path d="M8 62 C50 64 70 72 100 76 S160 60 212 52" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
-    </svg>
-  );
-}
+const SCENARIOS: {
+  id: string;
+  tab: string;
+  icon: TabIconName;
+  space: string;
+  email: string;
+  members: string[];
+  extra: number;
+  feed: Item[];
+}[] = [
+  {
+    id: "group",
+    tab: "Study group",
+    icon: "group",
+    space: "Econ 201 study group",
+    email: "maya@uni.edu",
+    members: ["Maya", "Alex", "Sam"],
+    extra: 0,
+    feed: [
+      { kind: "word", title: "arbitrage", by: "Maya" },
+      { kind: "screenshot", title: "Supply and demand curve", by: "Alex" },
+      { kind: "link", title: "Lecture 4 slides", by: "Sam" },
+    ],
+  },
+  {
+    id: "team",
+    tab: "Team",
+    icon: "team",
+    space: "Design team reading list",
+    email: "jo@studio.co",
+    members: ["Jo", "Priya", "Lee", "Omar"],
+    extra: 0,
+    feed: [
+      { kind: "link", title: "Gestalt principles, explained", by: "Priya" },
+      { kind: "passage", title: "“Constraints breed creativity…”", by: "Jo" },
+      { kind: "page", title: "How Linear ships design", by: "Omar" },
+    ],
+  },
+  {
+    id: "org",
+    tab: "Organisation",
+    icon: "org",
+    space: "Acme Inc. Research",
+    email: "dana@acme.com",
+    members: ["Dana", "Ken", "Ola"],
+    extra: 37,
+    feed: [
+      { kind: "screenshot", title: "Q3 churn by cohort", by: "Ken" },
+      { kind: "page", title: "Competitor pricing teardown", by: "Ola" },
+      { kind: "word", title: "net revenue retention", by: "Dana" },
+    ],
+  },
+];
+
+const CYCLE_MS = 10500;
+const AVATAR = ["var(--accent)", "var(--blue)", "var(--amber)", "var(--red)"];
 
 /**
- * Plays the real Spaces flow: name a space, type an email, press Invite, see the
- * pending row, then flip to what the invited person sees. Timer-driven so a
- * throttled tab just runs slower instead of stalling mid-sentence.
+ * The Spaces flow for a group of any size: name a space, invite by email, people join,
+ * and everything shows who shared it. It plays each scenario on its own, then moves on;
+ * hover a tab to jump to it. Timer-driven, and it waits until scrolled into view.
  */
 export function SpacesDemo() {
-  const [run, setRun] = useState(0);
-  const [name, setName] = useState("");
-  const [mail, setMail] = useState("");
-  const [stage, setStage] = useState(0); // 0 name · 1 invite · 2 pending · 3 recipient
-  const [pressed, setPressed] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
+  const cycle = useAutoCycle(SCENARIOS.length, CYCLE_MS, started);
+  const s = SCENARIOS[cycle.index]!;
 
-  // Start when it scrolls into view, so a visitor doesn't miss the sequence below the fold.
+  const [name, setName] = useState("");
+  const [mail, setMail] = useState("");
+  const [stage, setStage] = useState(0); // 0 naming · 1 inviting · 2 invited
+  const [pressed, setPressed] = useState(false);
+  const [members, setMembers] = useState(0);
+  const [extraShown, setExtraShown] = useState(false);
+  const [feed, setFeed] = useState(0);
+
   useEffect(() => {
     const el = root.current;
     if (!el || typeof IntersectionObserver === "undefined") {
@@ -43,7 +94,7 @@ export function SpacesDemo() {
           io.disconnect();
         }
       },
-      { threshold: 0.35 },
+      { threshold: 0.3 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -55,6 +106,21 @@ export function SpacesDemo() {
     setMail("");
     setStage(0);
     setPressed(false);
+    setMembers(0);
+    setExtraShown(false);
+    setFeed(0);
+
+    if (cycle.reduced) {
+      // no motion: show the finished state
+      setName(s.space);
+      setMail(s.email);
+      setStage(2);
+      setMembers(s.members.length);
+      setExtraShown(true);
+      setFeed(s.feed.length);
+      return;
+    }
+
     const timers: number[] = [];
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
     const type = (text: string, set: (v: string) => void, start: number, per: number) => {
@@ -62,78 +128,108 @@ export function SpacesDemo() {
       return start + text.length * per;
     };
 
-    const nameDone = type(SPACE_NAME, setName, 400, 45);
-    at(nameDone + 400, () => setStage(1));
-    const mailDone = type(EMAIL, setMail, nameDone + 900, 55);
-    at(mailDone + 400, () => setPressed(true));
-    at(mailDone + 650, () => {
+    const nameDone = type(s.space, setName, 300, 38);
+    at(nameDone + 300, () => setStage(1));
+    const mailDone = type(s.email, setMail, nameDone + 700, 42);
+    at(mailDone + 350, () => setPressed(true));
+    at(mailDone + 600, () => {
       setPressed(false);
       setStage(2);
     });
-    at(mailDone + 2600, () => setStage(3));
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [run, started]);
+    let t = mailDone + 1100;
+    s.members.forEach((_, i) => {
+      at(t + i * 380, () => setMembers(i + 1));
+    });
+    t += s.members.length * 380;
+    if (s.extra) at(t, () => setExtraShown(true));
+    t += 500;
+    s.feed.forEach((_, i) => at(t + i * 520, () => setFeed(i + 1)));
+
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [started, cycle.index, cycle.reduced, s]);
+
+  const total = 1 + members + (extraShown ? s.extra : 0);
 
   return (
     <div ref={root}>
-      <div className="sd">
+      <div className="mb-3">
+        <HoverTabs
+          label="Who is it for?"
+          items={SCENARIOS.map((x) => ({ id: x.id, label: x.tab, icon: x.icon }))}
+          active={cycle.index}
+          hold={cycle.hold}
+          cycleMs={CYCLE_MS}
+          onEnter={cycle.enter}
+          onLeave={cycle.leave}
+          onPick={cycle.pick}
+        />
+      </div>
+
+      <div className="sd" style={{ minHeight: 318 }}>
         <div className="sd-head">
-          <span>{stage === 3 ? "What they see" : "Your space"}</span>
-          {stage === 3 && <span className="sd-badge">r@example.com</span>}
+          <span>{name || "New space"}</span>
+          <span className="sd-badge">
+            {total} {total === 1 ? "person" : "people"}
+          </span>
         </div>
 
-        {stage < 3 ? (
-          <div className="sd-body">
-            <div className="sd-label">Space name</div>
-            <div className="sd-input">
-              {name}
-              {stage === 0 && <b className="sd-caret" />}
-            </div>
+        <div className="sd-body">
+          <div className="sd-label">Space name</div>
+          <div className="sd-input">
+            {name}
+            {stage === 0 && <b className="sd-caret" />}
+          </div>
 
-            {stage >= 1 && (
-              <div className="sd-rise">
-                <div className="sd-label">Invite by email</div>
-                <div className="sd-row">
-                  <div className="sd-input sd-grow">
-                    {mail}
-                    {stage === 1 && <b className="sd-caret" />}
-                  </div>
-                  <div className={`sd-btn ${pressed ? "pressed" : ""}`}>Invite</div>
+          {stage >= 1 && (
+            <div className="sd-rise">
+              <div className="sd-label">Invite by email</div>
+              <div className="sd-row">
+                <div className="sd-input sd-grow">
+                  {mail}
+                  {stage === 1 && <b className="sd-caret" />}
                 </div>
+                <div className={`sd-btn ${pressed ? "pressed" : ""}`}>Invite</div>
               </div>
-            )}
+            </div>
+          )}
 
-            {stage >= 2 && (
-              <div className="sd-pending sd-rise">
-                <span>{EMAIL}</span>
-                <span className="sd-tag">invited</span>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="sd-body sd-rise">
-            <div className="sd-label">{SPACE_NAME}</div>
-            <div className="sd-card">
-              <div className="sd-shot">
-                <Chart />
-              </div>
-              <div className="sd-cardtext">
-                <div className="sd-title">Screenshot · two exchanges</div>
-                <div className="sd-by">Shared by Alex</div>
-              </div>
+          {stage >= 2 && members === 0 && (
+            <div className="sd-pending sd-rise">
+              <span>{s.email}</span>
+              <span className="sd-tag">invited</span>
             </div>
-            <div className="sd-card">
-              <div className="sd-cardtext">
-                <div className="sd-title">arbitrage</div>
-                <div className="sd-by">Shared by Alex</div>
-              </div>
+          )}
+
+          {members > 0 && (
+            <div className="sd-members">
+              <span className="sd-av" style={{ "--av": "var(--ink-soft)" } as React.CSSProperties}>
+                You
+              </span>
+              {s.members.slice(0, members).map((m, i) => (
+                <span key={m} className="sd-av" style={{ "--av": AVATAR[i % AVATAR.length] } as React.CSSProperties} title={m}>
+                  {m[0]}
+                </span>
+              ))}
+              {extraShown && <span className="sd-more sd-rise">+{s.extra} more</span>}
             </div>
-          </div>
-        )}
+          )}
+
+          {feed > 0 && (
+            <div className="sd-feed">
+              {s.feed.slice(0, feed).map((it) => (
+                <div key={it.title} className="sd-item">
+                  <TabIcon name={it.kind === "word" ? "word" : it.kind} />
+                  <span className="sd-grow2">
+                    <span className="sd-title">{it.title}</span>
+                    <span className="sd-by">Shared by {it.by}</span>
+                  </span>
+                  <span className="sd-kind">{it.kind === "passage" ? "passage" : it.kind}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <button type="button" onClick={() => setRun((n) => n + 1)} className="mt-3 text-sm text-ink-soft underline underline-offset-4 hover:text-ink">
-        Replay
-      </button>
     </div>
   );
 }

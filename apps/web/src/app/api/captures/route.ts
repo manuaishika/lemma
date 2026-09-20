@@ -55,25 +55,30 @@ export async function POST(req: Request) {
   if (capture_type === "screenshot" && !body.image_path) return badRequest("image_path is required");
   if (capture_type === "link" && !body.link_url) return badRequest("link_url is required");
 
-  const { data, error } = await ctx.supabase
-    .from("captures")
-    .insert({
-      user_id: ctx.user.id,
-      text,
-      capture_type,
-      sentence: body.sentence ?? null,
-      page_title: body.page_title ?? null,
-      source_url: body.source_url ?? null,
-      link_url: body.link_url ?? null,
-      image_path: body.image_path ?? null,
-      explanation: body.explanation ?? null,
-      dictionary_definition: body.dictionary_definition ?? null,
-      encyclopedic_summary: body.encyclopedic_summary ?? null,
-      user_note: body.user_note?.trim() || null,
-      space_id: body.space_id ?? null,
-    })
-    .select("*")
-    .single();
+  const row = {
+    user_id: ctx.user.id,
+    text,
+    capture_type,
+    sentence: body.sentence ?? null,
+    page_title: body.page_title ?? null,
+    source_url: body.source_url ?? null,
+    link_url: body.link_url ?? null,
+    image_path: body.image_path ?? null,
+    explanation: body.explanation ?? null,
+    dictionary_definition: body.dictionary_definition ?? null,
+    encyclopedic_summary: body.encyclopedic_summary ?? null,
+    user_note: body.user_note?.trim() || null,
+    space_id: body.space_id ?? null,
+  };
+
+  let { data, error } = await ctx.supabase.from("captures").insert(row).select("*").single();
+
+  // Migration 0009 (encyclopedic_summary) not applied yet: save the capture without the
+  // Wikipedia layer instead of failing it outright.
+  if (error && /encyclopedic_summary/.test(error.message)) {
+    const { encyclopedic_summary: _omit, ...withoutWiki } = row;
+    ({ data, error } = await ctx.supabase.from("captures").insert(withoutWiki).select("*").single());
+  }
 
   if (error) return badRequest(error.message);
   // The on_capture_created trigger has already created the SRS card.

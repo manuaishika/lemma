@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ExplainInput, ExplainResult } from "@lemma/shared";
+import { shorten, type ExplainInput, type ExplainResult } from "@lemma/shared";
 
 // Cost-effective default; override with LEMMA_EXPLAIN_MODEL.
 const MODEL = process.env.LEMMA_EXPLAIN_MODEL || "claude-haiku-4-5";
@@ -57,16 +57,6 @@ async function dictionaryDefinition(text: string): Promise<string | null> {
   return primary ?? backup;
 }
 
-/** First sentence only, capped at `max` characters on a word boundary. */
-function shorten(text: string, max: number): string {
-  const t = text.replace(/\s+/g, " ").trim();
-  const first = t.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? t;
-  const s = first.length >= 30 ? first : t; // don't keep a stub like "Mr."
-  if (s.length <= max) return s;
-  const cut = s.slice(0, max);
-  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:(\-\s]+$/, "") + "…";
-}
-
 const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " };
 
 /** Wiktionary's REST definition endpoint (same Wikimedia infrastructure as Wikipedia). */
@@ -91,7 +81,7 @@ async function wiktionaryDefinition(text: string): Promise<string | null> {
           .trim();
         if (clean.length >= 8) {
           const pos = entry.partOfSpeech?.toLowerCase();
-          const short = shorten(clean, 170);
+          const short = shorten(clean, 150);
           return pos ? `(${pos}) ${short}` : short;
         }
       }
@@ -118,7 +108,7 @@ async function dictionaryApiDefinition(text: string): Promise<string | null> {
     const meaning = data?.[0]?.meanings?.[0];
     const def = meaning?.definitions?.[0]?.definition;
     if (!def) return null;
-    const short = shorten(def, 170);
+    const short = shorten(def, 150);
     return meaning?.partOfSpeech ? `(${meaning.partOfSpeech}) ${short}` : short;
   } catch {
     return null;
@@ -138,7 +128,7 @@ async function wikipediaSummary(text: string): Promise<string | null> {
     if (!res.ok) return null;
     const data = (await res.json()) as { type?: string; extract?: string };
     if (data.type !== "standard" || !data.extract) return null; // skip disambiguation pages
-    return shorten(data.extract, 230) || null;
+    return shorten(data.extract, 180) || null;
   } catch {
     return null;
   }

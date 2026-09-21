@@ -57,6 +57,16 @@ async function dictionaryDefinition(text: string): Promise<string | null> {
   return primary ?? backup;
 }
 
+/** First sentence only, capped at `max` characters on a word boundary. */
+function shorten(text: string, max: number): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  const first = t.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? t;
+  const s = first.length >= 30 ? first : t; // don't keep a stub like "Mr."
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:(\-\s]+$/, "") + "…";
+}
+
 const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&nbsp;": " " };
 
 /** Wiktionary's REST definition endpoint (same Wikimedia infrastructure as Wikipedia). */
@@ -81,7 +91,8 @@ async function wiktionaryDefinition(text: string): Promise<string | null> {
           .trim();
         if (clean.length >= 8) {
           const pos = entry.partOfSpeech?.toLowerCase();
-          return pos ? `(${pos}) ${clean}` : clean;
+          const short = shorten(clean, 170);
+          return pos ? `(${pos}) ${short}` : short;
         }
       }
     }
@@ -107,7 +118,8 @@ async function dictionaryApiDefinition(text: string): Promise<string | null> {
     const meaning = data?.[0]?.meanings?.[0];
     const def = meaning?.definitions?.[0]?.definition;
     if (!def) return null;
-    return meaning?.partOfSpeech ? `(${meaning.partOfSpeech}) ${def}` : def;
+    const short = shorten(def, 170);
+    return meaning?.partOfSpeech ? `(${meaning.partOfSpeech}) ${short}` : short;
   } catch {
     return null;
   }
@@ -126,8 +138,7 @@ async function wikipediaSummary(text: string): Promise<string | null> {
     if (!res.ok) return null;
     const data = (await res.json()) as { type?: string; extract?: string };
     if (data.type !== "standard" || !data.extract) return null; // skip disambiguation pages
-    const sentences = data.extract.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [data.extract];
-    return sentences.slice(0, 2).join("").trim().slice(0, 420) || null;
+    return shorten(data.extract, 230) || null;
   } catch {
     return null;
   }

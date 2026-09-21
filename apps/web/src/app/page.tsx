@@ -13,11 +13,11 @@ const VIDEO_URL: string | null = null;
 
 const SAMPLE = {
   dictionary_definition:
-    "(noun) the simultaneous buying and selling of assets in different markets to profit from a difference in price.",
+    "(noun) buying and selling the same thing in different markets to profit from the price gap.",
   encyclopedic_summary:
-    "Arbitrage is the practice of taking advantage of a price difference between two or more markets, striking a combination of matching deals to capture the imbalance as profit.",
+    "Arbitrage is profiting from a price difference between markets by buying low in one and selling high in another.",
   explanation:
-    "Here it means the traders bought on the cheaper exchange and sold on the dearer one at the same moment, so the gap turned into risk-free profit.",
+    "The traders bought on the cheaper exchange and sold on the dearer one, locking in a risk-free profit.",
 };
 
 function VideoSlot() {

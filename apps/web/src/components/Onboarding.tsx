@@ -13,11 +13,11 @@ const WORD = "arbitrage";
 const SENTENCE =
   "The traders spotted the same stock priced differently on two exchanges and locked in a risk-free profit through arbitrage before the gap closed.";
 const DEFINITION =
-  "(noun) the simultaneous buying and selling of assets in different markets to profit from a difference in price.";
+  "(noun) buying and selling the same thing in different markets to profit from the price gap.";
 const WIKI =
-  "Arbitrage is the practice of taking advantage of a price difference between two or more markets, striking a combination of matching deals to capture the imbalance as profit.";
+  "Arbitrage is profiting from a price difference between markets by buying low in one and selling high in another.";
 const CONTEXT =
-  "Here it means the traders bought on the cheaper exchange and sold on the dearer one at the same moment, so the gap turned into risk-free profit. It only lasts until others close the gap.";
+  "The traders bought on the cheaper exchange and sold on the dearer one, locking in a risk-free profit.";
 const EXAMPLE_NOTE =
   "Making money from a price gap before anyone else notices it, like flipping a concert ticket the second it's cheaper somewhere else.";
 

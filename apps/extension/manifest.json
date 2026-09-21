@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Lemma",
-  "version": "0.2.0",
-  "description": "Capture words you meet while reading and keep them with your own understanding. Right-click to save.",
-  "permissions": ["storage", "activeTab", "scripting", "contextMenus"],
+  "version": "0.3.0",
+  "minimum_chrome_version": "116",
+  "description": "Save any word, passage, screenshot, link or page while you read, with its meaning and your note. Right-click to capture.",
+  "permissions": ["storage", "activeTab", "contextMenus"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js",

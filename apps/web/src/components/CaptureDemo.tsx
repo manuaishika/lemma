@@ -60,9 +60,9 @@ function Popup({ kind }: { kind: DemoKind }) {
       {kind === "word" && (
         <>
           <div className="demo-pop-label">Definition</div>
-          <div className="demo-pop-def">the simultaneous buying and selling of assets in different markets to profit from a price difference.</div>
+          <div className="demo-pop-def">buying and selling the same thing in different markets to profit from the price gap.</div>
           <div className="demo-pop-label">How it’s used here</div>
-          <div className="demo-pop-ctx">Buying on the cheaper exchange, selling on the dearer one.</div>
+          <div className="demo-pop-ctx">Bought cheap on one exchange, sold high on another.</div>
         </>
       )}
       <div className="demo-pop-label">Your note (optional)</div>

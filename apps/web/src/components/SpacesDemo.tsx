@@ -116,7 +116,7 @@ export function SpacesDemo() {
       setMail(s.email);
       setStage(2);
       setMembers(s.members.length);
-      setExtraShown(true);
+      setExtraShown(s.extra > 0);
       setFeed(s.feed.length);
       return;
     }
@@ -210,7 +210,7 @@ export function SpacesDemo() {
                   {m[0]}
                 </span>
               ))}
-              {extraShown && <span className="sd-more sd-rise">+{s.extra} more</span>}
+              {extraShown && s.extra > 0 && <span className="sd-more sd-rise">+{s.extra} more</span>}
             </div>
           )}
 
